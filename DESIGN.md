@@ -62,9 +62,33 @@ por `nodeId` + guard de re-emit). No Adonis, o provider pega o ioredis cru do
 partir do `config/diagnostics_redis.ts`. As conexões são do `@adonisjs/redis` — o
 relay nunca as fecha.
 
+## 5.1 OpenTelemetry (auto-bridge embutido, sem pacote extra)
+
+O AdonisJS v7 tem `@adonisjs/otel` oficial (registra um SDK OTel global). O gancho
+universal é o `@opentelemetry/api` (no-op sem SDK). Em vez de um pacote separado, a
+ponte vive **no próprio core**, ligada pelo provider:
+
+- No `boot()`, o provider faz `import('./otel/index.js')` **dinâmico** dentro de
+  try/catch. Esse módulo importa `@opentelemetry/api` (peer **opcional**). Se o OTel
+  não estiver instalado, o import falha e é engolido — a ponte nunca carrega e o
+  caminho quente do `emit`/`trace` continua **sem nenhum import de OTel**. Opt-out:
+  `otel: false` no `config/diagnostics.ts`.
+- A ponte assina todos os canais `agora:*` (via o registry) e reconstrói **spans
+  OTel reais** a partir dos eventos do `trace()` (start→end/error, sync e async),
+  com atributos do payload. POINT `emit`s viram `addEvent` no span ativo.
+- Publica `otelTraceparent()` no slot global `Symbol.for('@agora/otel:traceparent')`
+  — o `@agora/durable` lê esse slot e continua o trace distribuído nos remote steps,
+  sem config, sem dependência hard.
+- **Limitação honesta (observador post-hoc):** a ponte não controla o contexto de
+  execução, então aninha o span agora sob o **span OTel ativo do ambiente** (ex: o
+  span do request do `@adonisjs/otel`) — não cria parentesco agora-sob-agora. No uso
+  real isso é o que importa: cada `trace()` durante um request nasce filho do span do
+  request.
+
 ## 6. Pacotes
 
-- `@agora/diagnostics` — núcleo (emit/trace/onDiagnostic + registry + context bridge)
+- `@agora/diagnostics` — núcleo (emit/trace/onDiagnostic + registry + context bridge
+  + **auto-bridge OTel** opcional via `@opentelemetry/api`; subpath `@agora/diagnostics/otel`)
 - `@agora/diagnostics-redis` — relay cross-process sobre `@adonisjs/redis`
 - `@agora/diagnostics-queue` — relay cross-process (fan-out) sobre `@adonisjs/queue`
 

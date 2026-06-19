@@ -27,6 +27,11 @@
       "types": "./dist/configure.d.ts",
       "import": "./dist/configure.js",
       "default": "./dist/configure.js"
+    },
+    "./otel": {
+      "types": "./dist/src/otel/index.d.ts",
+      "import": "./dist/src/otel/index.js",
+      "default": "./dist/src/otel/index.js"
     }
   },
   "files": ["dist/", "README.md", "CHANGELOG.md"],
@@ -51,14 +56,24 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
-    "@adonisjs/core": "^6.12.0"
+    "@adonisjs/core": "^6.12.0",
+    "@opentelemetry/api": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@opentelemetry/api": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@adonisjs/assembler": "^7.8.0",
     "@adonisjs/core": "^6.17.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/core": "^1.30.0",
+    "@opentelemetry/sdk-trace-base": "^1.30.0",
     "@types/node": "^20.0.0",
     "typescript": "^5.4.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "@opentelemetry/context-async-hooks": "^1.30.0"
   },
   "engines": {
     "node": ">=20.6.0"
