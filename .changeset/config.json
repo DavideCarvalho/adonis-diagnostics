@@ -3,7 +3,7 @@
   "changelog": ["@changesets/changelog-github", { "repo": "DavideCarvalho/adonis-diagnostics" }],
   "commit": false,
   "fixed": [],
-  "linked": [["@agora/diagnostics", "@agora/diagnostics-redis"]],
+  "linked": [["@agora/diagnostics", "@agora/diagnostics-redis", "@agora/diagnostics-queue"]],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",

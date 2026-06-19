@@ -66,6 +66,7 @@ relay nunca as fecha.
 
 - `@agora/diagnostics` — núcleo (emit/trace/onDiagnostic + registry + context bridge)
 - `@agora/diagnostics-redis` — relay cross-process sobre `@adonisjs/redis`
+- `@agora/diagnostics-queue` — relay cross-process (fan-out) sobre `@adonisjs/queue`
 
 ## 7. Não-objetivos
 

@@ -1,0 +1,22 @@
+{{{
+  exports({ to: app.configPath('diagnostics_queue.ts') })
+}}}
+import { defineConfig } from '@agora/diagnostics-queue'
+
+export default defineConfig({
+  /**
+   * `@adonisjs/queue` queue to dispatch the relay job onto. A worker must process
+   * this queue (`node ace queue:work {queue}`). Omit for the default queue.
+   */
+  // queue: 'diagnostics',
+
+  /**
+   * Forward every event of these libs across processes (current + future).
+   */
+  // libs: ['resilience', 'durable'],
+
+  /**
+   * Or relay EVERY agora channel (overrides `libs`/`channels`).
+   */
+  // all: true,
+})

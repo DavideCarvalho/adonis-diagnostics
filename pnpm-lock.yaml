@@ -51,6 +51,31 @@ importers:
         specifier: ^3.0.0
         version: 3.2.6(@types/node@20.19.43)
 
+  packages/queue:
+    dependencies:
+      '@agora/diagnostics':
+        specifier: workspace:^
+        version: link:../core
+    devDependencies:
+      '@adonisjs/assembler':
+        specifier: ^7.8.0
+        version: 7.8.2(typescript@5.9.3)
+      '@adonisjs/core':
+        specifier: ^6.17.0
+        version: 6.21.0(@adonisjs/assembler@7.8.2(typescript@5.9.3))
+      '@adonisjs/queue':
+        specifier: ^0.6.0
+        version: 0.6.1(@adonisjs/assembler@7.8.2(typescript@5.9.3))(@adonisjs/core@6.21.0(@adonisjs/assembler@7.8.2(typescript@5.9.3)))(@adonisjs/redis@9.2.0(@adonisjs/core@6.21.0(@adonisjs/assembler@7.8.2(typescript@5.9.3))))(ioredis@5.11.1)
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.43
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.6(@types/node@20.19.43)
+
   packages/redis:
     dependencies:
       '@agora/diagnostics':
@@ -179,6 +204,20 @@ packages:
     resolution: {integrity: sha512-zeWk14EuFGD+YrwLfwrzUcEKS06equr1Xn624+b28H3s0JhjmgXNfsDRlBe9X+GgJiuD8Zf3/52MX//7cGaNWQ==}
     engines: {node: '>=18.16.0'}
 
+  '@adonisjs/queue@0.6.1':
+    resolution: {integrity: sha512-DCar+xY+1L13Z9GzI0glpC5msxZb0CFjNgV2Ww4igYKYsGJeJDp1D4nLSUydaWbnovWHHEdAQTWpKdwsu+X05g==}
+    engines: {node: '>=24.0.0'}
+    peerDependencies:
+      '@adonisjs/assembler': ^8.0.0
+      '@adonisjs/core': ^7.0.0
+      '@adonisjs/lucid': ^20.0.0 || ^21.0.0 || ^22.0.0
+      '@adonisjs/redis': ^8.0.0 || ^9.0.0 || ^10.0.0
+    peerDependenciesMeta:
+      '@adonisjs/lucid':
+        optional: true
+      '@adonisjs/redis':
+        optional: true
+
   '@adonisjs/redis@9.2.0':
     resolution: {integrity: sha512-DUI9NrHDLZ2ISNjMlqWbKJT99ZYj1ZmvhNFTfhVs9lc7K2KJmNKZfK8Y85a8eN7q+ZYMBYSu1uRemxGs6xRaYw==}
     engines: {node: '>=20.6.0'}
@@ -258,6 +297,27 @@ packages:
 
   '@borewit/text-codec@0.2.2':
     resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
+
+  '@boringnode/queue@0.5.2':
+    resolution: {integrity: sha512-dQ5beCSQc9ry86VJrcrTfpWVrf/hFQwl5hKVeaA4oiPFPSbD6b6d+S2t7YjBkcRDzzqPxWI88IqxAFiW/xZ0/A==}
+    engines: {node: '>=24.0.0'}
+    peerDependencies:
+      '@opentelemetry/api': ^1.9.0
+      '@opentelemetry/core': ^1.30.0 || ^2.0.0
+      '@opentelemetry/instrumentation': ^0.200.0
+      ioredis: ^5.0.0
+      knex: ^3.0.0
+    peerDependenciesMeta:
+      '@opentelemetry/api':
+        optional: true
+      '@opentelemetry/core':
+        optional: true
+      '@opentelemetry/instrumentation':
+        optional: true
+      ioredis:
+        optional: true
+      knex:
+        optional: true
 
   '@changesets/apply-release-plan@7.1.1':
     resolution: {integrity: sha512-9qPCm/rLx/xoOFXIHGB229+4GOL76S4MC+7tyOuTsR6+1jYlfFDQORdvwR5hDA6y4FL2BPt3qpbcQIS+dW85LA==}
@@ -507,6 +567,10 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@lukeed/ms@2.0.2':
+    resolution: {integrity: sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA==}
+    engines: {node: '>=8'}
 
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -1082,6 +1146,10 @@ packages:
     resolution: {integrity: sha512-QGHetPSSuprVs+lJmMDcivvrBwTKASzXQ5qxFvRC2RFESjjod71bDvFvhxTjDgkNjrrb72AI6JPjfYwxrIy33A==}
     engines: {node: '>=18'}
 
+  cron-parser@5.5.0:
+    resolution: {integrity: sha512-oML4lKUXxizYswqmxuOCpgFS8BNUJpIu6k/2HVHyaL8Ynnf3wdf9tkns0yRdJLSIjkJ+b0DXHMZEHGpMwjnPww==}
+    engines: {node: '>=18'}
+
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
@@ -1468,6 +1536,10 @@ packages:
 
   loupe@3.2.1:
     resolution: {integrity: sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ==}
+
+  luxon@3.7.2:
+    resolution: {integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==}
+    engines: {node: '>=12'}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -2323,6 +2395,20 @@ snapshots:
       abstract-logging: 2.0.1
       pino: 10.3.1
 
+  '@adonisjs/queue@0.6.1(@adonisjs/assembler@7.8.2(typescript@5.9.3))(@adonisjs/core@6.21.0(@adonisjs/assembler@7.8.2(typescript@5.9.3)))(@adonisjs/redis@9.2.0(@adonisjs/core@6.21.0(@adonisjs/assembler@7.8.2(typescript@5.9.3))))(ioredis@5.11.1)':
+    dependencies:
+      '@adonisjs/assembler': 7.8.2(typescript@5.9.3)
+      '@adonisjs/core': 6.21.0(@adonisjs/assembler@7.8.2(typescript@5.9.3))
+      '@boringnode/queue': 0.5.2(ioredis@5.11.1)
+    optionalDependencies:
+      '@adonisjs/redis': 9.2.0(@adonisjs/core@6.21.0(@adonisjs/assembler@7.8.2(typescript@5.9.3)))
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+      - '@opentelemetry/core'
+      - '@opentelemetry/instrumentation'
+      - ioredis
+      - knex
+
   '@adonisjs/redis@9.2.0(@adonisjs/core@6.21.0(@adonisjs/assembler@7.8.2(typescript@5.9.3)))':
     dependencies:
       '@adonisjs/core': 6.21.0(@adonisjs/assembler@7.8.2(typescript@5.9.3))
@@ -2387,6 +2473,14 @@ snapshots:
     optional: true
 
   '@borewit/text-codec@0.2.2': {}
+
+  '@boringnode/queue@0.5.2(ioredis@5.11.1)':
+    dependencies:
+      '@lukeed/ms': 2.0.2
+      '@poppinss/utils': 7.0.1
+      cron-parser: 5.5.0
+    optionalDependencies:
+      ioredis: 5.11.1
 
   '@changesets/apply-release-plan@7.1.1':
     dependencies:
@@ -2654,6 +2748,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@lukeed/ms@2.0.2': {}
 
   '@manypkg/find-root@1.1.0':
     dependencies:
@@ -3159,6 +3255,10 @@ snapshots:
       p-filter: 4.1.0
       p-map: 7.0.4
 
+  cron-parser@5.5.0:
+    dependencies:
+      luxon: 3.7.2
+
   cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
@@ -3525,6 +3625,8 @@ snapshots:
       wrap-ansi: 10.0.0
 
   loupe@3.2.1: {}
+
+  luxon@3.7.2: {}
 
   magic-string@0.30.21:
     dependencies:
