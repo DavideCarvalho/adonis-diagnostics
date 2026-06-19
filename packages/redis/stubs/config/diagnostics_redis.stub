@@ -1,0 +1,21 @@
+{{{
+  exports({ to: app.configPath('diagnostics_redis.ts') })
+}}}
+import { defineConfig } from '@agora/diagnostics-redis'
+
+export default defineConfig({
+  /**
+   * `@adonisjs/redis` connection to relay over. Omit for the default connection.
+   */
+  // connection: 'main',
+
+  /**
+   * Forward every event of these libs across processes (current + future).
+   */
+  // libs: ['resilience', 'durable'],
+
+  /**
+   * Or relay EVERY agora channel (overrides `libs`/`channels`).
+   */
+  // all: true,
+})

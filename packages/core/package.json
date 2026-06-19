@@ -1,0 +1,75 @@
+{
+  "name": "@agora/diagnostics",
+  "version": "0.1.0",
+  "description": "A standard convention for @agora/* AdonisJS libs to emit observability events over node:diagnostics_channel — recorded by a single generic Telescope watcher.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DavideCarvalho/adonis-diagnostics.git",
+    "directory": "packages/core"
+  },
+  "author": "Davi Carvalho <davi@goflip.ai>",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    },
+    "./diagnostics_provider": {
+      "types": "./dist/providers/diagnostics_provider.d.ts",
+      "import": "./dist/providers/diagnostics_provider.js",
+      "default": "./dist/providers/diagnostics_provider.js"
+    },
+    "./configure": {
+      "types": "./dist/configure.d.ts",
+      "import": "./dist/configure.js",
+      "default": "./dist/configure.js"
+    }
+  },
+  "files": ["dist/", "README.md", "CHANGELOG.md"],
+  "//sideEffects": "NOT false: registry.ts, context_accessor.ts and subscriber.ts install Symbol.for() global slots AT IMPORT TIME (cross-copy-stable channel registry / accessor / subscription set); channel.ts and trace.ts register onRegistryReset hooks at load. A bundler told sideEffects:false could tree-shake these initializers and break cross-copy discovery. Pure modules (index, types) stay tree-shakeable.",
+  "sideEffects": [
+    "**/registry.js",
+    "**/registry.ts",
+    "**/context_accessor.js",
+    "**/context_accessor.ts",
+    "**/subscriber.js",
+    "**/subscriber.ts",
+    "**/channel.js",
+    "**/channel.ts",
+    "**/trace.js",
+    "**/trace.ts"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && pnpm run copy:stubs",
+    "copy:stubs": "mkdir -p dist/stubs/start && cp stubs/start/diagnostics.stub dist/stubs/start/diagnostics.stub",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "@adonisjs/core": "^6.12.0"
+  },
+  "devDependencies": {
+    "@adonisjs/assembler": "^7.8.0",
+    "@adonisjs/core": "^6.17.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "keywords": [
+    "adonisjs",
+    "adonis",
+    "diagnostics",
+    "diagnostics-channel",
+    "observability",
+    "telescope",
+    "agora"
+  ]
+}
