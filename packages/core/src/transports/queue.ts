@@ -1,10 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import {
-  type ChannelRef,
-  type DiagnosticEvent,
-  createChannelSelector,
-  getChannel,
-} from '@agora/diagnostics';
+import { getChannel } from '../channel.js';
+import { type ChannelRef, createChannelSelector } from '../relay.js';
+import type { DiagnosticEvent } from '../types.js';
 
 export type { ChannelRef };
 
@@ -20,10 +17,10 @@ export interface DiagnosticsEventEnvelope {
 }
 
 /**
- * The minimal `@boringnode/queue` `Job.dispatch` surface the relay needs to forward an event. The
- * `DiagnosticsEventJob` class exported by this package satisfies it structurally, as does any job
- * class whose `dispatch(payload)` returns an awaitable. Keeping it structural lets the relay be
- * tested without a queue backend.
+ * The minimal `@adonisjs/queue` `Job.dispatch` surface the relay needs to forward an event. The
+ * `DiagnosticsEventJob` class satisfies it structurally, as does any job class whose
+ * `dispatch(payload)` returns an awaitable. Keeping it structural lets the relay be tested without a
+ * queue backend.
  */
 export interface DiagnosticsEventJobLike {
   dispatch(payload: DiagnosticsEventEnvelope): PromiseLike<unknown> | unknown;
@@ -32,7 +29,7 @@ export interface DiagnosticsEventJobLike {
 export interface DiagnosticsQueueRelayOptions {
   /**
    * The job class used to forward events. Its `dispatch(envelope)` is called for each selected local
-   * event. In an AdonisJS app this is {@link DiagnosticsEventJob}, registered with `@adonisjs/queue`
+   * event. In an AdonisJS app this is the `DiagnosticsEventJob`, registered with `@adonisjs/queue`
    * so a worker in another process re-emits it locally via {@link bindRelayReEmitter}.
    */
   job: DiagnosticsEventJobLike;
@@ -52,7 +49,7 @@ export interface DiagnosticsQueueRelayOptions {
 }
 
 /**
- * Process-local state a {@link DiagnosticsEventJob} needs when its `execute()` runs in a worker:
+ * Process-local state the `DiagnosticsEventJob` needs when its `execute()` runs in a worker:
  * the local `nodeId` (to suppress this process's own echoes) and the re-emit guard (to stop the
  * re-emitted event from being forwarded back to the queue). Populated by {@link bindRelayReEmitter}.
  */
@@ -88,13 +85,13 @@ class ReEmitGuard implements RelayReEmitter {
 }
 
 /**
- * The active re-emitter for this process. The {@link DiagnosticsEventJob}'s `execute()` reads it so
+ * The active re-emitter for this process. The `DiagnosticsEventJob`'s `execute()` reads it so
  * a worker re-emits received events onto the local bus. `null` until a relay starts in this process.
  */
 let activeReEmitter: ReEmitGuard | null = null;
 
 /**
- * Bind the process-local re-emitter the {@link DiagnosticsEventJob} uses to publish queue-received
+ * Bind the process-local re-emitter the `DiagnosticsEventJob` uses to publish queue-received
  * events. Called by {@link createDiagnosticsQueueRelay}; exported for advanced setups (e.g. a
  * worker-only process that forwards nothing but must still re-emit). Returns an unbind function.
  */
@@ -114,14 +111,17 @@ export function getActiveReEmitter(): RelayReEmitter | null {
 /**
  * Relay diagnostics events across processes over `@adonisjs/queue`. Forwards selected local
  * `agora:<lib>:<event>` channels by dispatching a job carrying `{ node, env }`; a worker running in
- * ANOTHER process executes that job and re-emits the event onto its local bus (see
- * {@link DiagnosticsEventJob}), so `onDiagnostic` handlers / `getChannel(...).subscribe(...)` fire
+ * ANOTHER process executes that job and re-emits the event onto its local bus (see the
+ * `DiagnosticsEventJob`), so `onDiagnostic` handlers / `getChannel(...).subscribe(...)` fire
  * cross-process.
  *
  * A relay is fan-out (no back-channel), which fits the queue model. Loop-safe: own-process echoes
  * are suppressed by `nodeId`, and a re-emit guard stops a re-emitted event from being forwarded
  * back. Forwarding is fire-and-forget and never throws into `emit()`; the job's `execute()` never
  * throws into the worker. Does NOT own the queue lifecycle — `@adonisjs/queue` does.
+ *
+ * Usually you don't call this directly: `config/diagnostics.ts` selects it via
+ * `transports.queue({ ... })` and the provider starts it for you.
  *
  * @returns a teardown that removes all local subscriptions and unbinds the process re-emitter.
  */

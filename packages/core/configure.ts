@@ -5,7 +5,8 @@ import { stubsRoot } from './stubs/main.js';
  * `node ace configure @agora/diagnostics` — auto-wires the package:
  *
  * 1. registers the service provider in `adonisrc.ts`;
- * 2. publishes `start/diagnostics.ts` (where handlers are registered) and
+ * 2. publishes `config/diagnostics.ts` (OTel + cross-process transports);
+ * 3. publishes `start/diagnostics.ts` (where handlers are registered) and
  *    registers it as a preload file.
  */
 export async function configure(command: Configure) {
@@ -16,5 +17,6 @@ export async function configure(command: Configure) {
     rcFile.addPreloadFile('#start/diagnostics');
   });
 
+  await codemods.makeUsingStub(stubsRoot, 'config/diagnostics.stub', {});
   await codemods.makeUsingStub(stubsRoot, 'start/diagnostics.stub', {});
 }

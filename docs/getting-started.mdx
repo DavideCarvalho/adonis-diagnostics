@@ -1,0 +1,165 @@
+---
+title: Getting Started
+description: Install and configure the package, emit POINT events, trace spans, and correlate everything with a trace id.
+icon: Rocket
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+## Install
+
+<Tabs items={['node ace add', 'manual']}>
+<Tab value="node ace add">
+
+```sh title="terminal"
+node ace add @agora/diagnostics
+```
+
+This installs the package and runs `node ace configure @agora/diagnostics` for you.
+
+</Tab>
+<Tab value="manual">
+
+```sh title="terminal"
+npm i @agora/diagnostics
+node ace configure @agora/diagnostics
+```
+
+</Tab>
+</Tabs>
+
+The `configure` step does three things (see `configure.ts`):
+
+1. registers the service provider `@agora/diagnostics/diagnostics_provider` in `adonisrc.ts`;
+2. publishes `config/diagnostics.ts` (the `otel` flag and cross-process [transports](/docs/diagnostics/transports));
+3. publishes `start/diagnostics.ts` and registers it as a **preload file**, so your handlers are subscribed before the app serves traffic.
+
+<Callout type="info" title="What the provider actually does">
+The `emit` / `trace` / `onDiagnostic` surface is just process-global functions over `node:diagnostics_channel`, so there is almost nothing to register. The provider's jobs are (1) tearing down every `onDiagnostic` subscription on graceful shutdown so a reloaded process doesn't leak listeners, and (2) starting the [OpenTelemetry bridge](/docs/diagnostics/opentelemetry) automatically when an OTel SDK is installed.
+</Callout>
+
+## Emitting POINT events
+
+Call `emit(lib, event, payload)` wherever something interesting happens:
+
+```ts
+import { emit } from '@agora/diagnostics'
+
+emit('billing', 'invoice-paid', { invoiceId: 'inv_123', amount: 4200 })
+```
+
+- `lib` identifies the emitting library (`'billing'`, `'authz'`, `'resilience'`…).
+- `event` is the event within it (`'invoice-paid'`, `'decision'`…).
+- `payload` is your own data.
+
+The event is published on the channel `agora:billing:invoice-paid`.
+
+<Callout type="info" title="Free when unobserved">
+`emit` builds and publishes the envelope **only when the channel has subscribers** (`channel.hasSubscribers`). A production process with no observer attached pays essentially nothing per call — so libraries can emit by default. `emit` also never throws: observability must never break the code path that produced the event.
+</Callout>
+
+### Load-shedding a hot event
+
+For very hot call sites, pass a `sample` predicate. It is consulted *after* the `hasSubscribers` gate and *before* the envelope is built, so a dropped event allocates nothing. A throwing sampler is treated as a skip.
+
+```ts
+// Publish ~10% of decisions, even when something is listening:
+emit('authz', 'decision', payload, { sample: () => Math.random() < 0.1 })
+```
+
+## Tracing spans
+
+When you want timing and start/end/error pairing — not just a "happened" fact — wrap the operation in `trace`:
+
+```ts
+import { trace } from '@agora/diagnostics'
+
+const decision = trace('authz', 'decision', () => evaluate(req), { subject })
+
+const result = await trace('durable', 'step', () => runStep(), { name })
+```
+
+`trace` publishes on the five span sub-channels of `agora:<lib>:<event>`:
+
+| Channel | Phase | Carries |
+| --- | --- | --- |
+| `…:start` | `start` | `payload`, `spanId`, `traceId` |
+| `…:end` | `end` | sync `result` + `durationMs` (also the sync prelude of an async op) |
+| `…:asyncStart` | `asyncStart` | continuation began |
+| `…:asyncEnd` | `asyncEnd` | settled `result` + `durationMs` |
+| `…:error` | `error` | `error` + `durationMs` |
+
+Every phase of one call shares a `spanId`, so observers can pair them without relying on subscription order. The return value (or thrown error) of `fn` is propagated to the caller unchanged.
+
+<Callout type="info" title="Also free when unobserved">
+When **no** span sub-channel has a subscriber, `trace` simply calls `fn` and returns its value — no span id, no envelope, no `performance.now()` reads. The hot path is a handful of `hasSubscribers` checks.
+</Callout>
+
+For a hot site that always traces the same operation, bind it once with `tracingChannel`:
+
+```ts
+import { tracingChannel } from '@agora/diagnostics'
+
+const decision = tracingChannel('authz', 'decision')
+decision.trace(() => evaluate(req), { subject })
+```
+
+## Trace correlation
+
+If your app uses [`@agora/context`](/docs/context), every `emit` and `trace` auto-fills `traceId` from the active request — with **zero config here**. `@agora/context`'s provider soft-detects this package at boot and registers its accessor via `setContextAccessor`, so correlation just works once both are installed.
+
+Need an explicit id instead? Pass it in `opts` (it wins over the accessor):
+
+```ts
+emit('billing', 'invoice-paid', payload, { traceId: ctx.request.id() })
+trace('durable', 'step', () => runStep(), { name }, { traceId })
+```
+
+Under the hood, `traceId` is read through a structural `ContextAccessor` interface registered on a cross-copy-stable `Symbol.for('@agora/context:accessor')` slot — exported here as `CONTEXT_ACCESSOR`. `@agora/context` is an optional peer; it is never imported by this package.
+
+## API surface
+
+| Export | Description |
+| --- | --- |
+| `emit(lib, event, payload, opts?)` | Publish a `DiagnosticEvent` on `agora:<lib>:<event>` (only when subscribed). `opts`: `traceId`, `sample`. |
+| `trace(lib, event, fn, payload?, opts?)` | Run `fn` and publish span start/end/error phases with timing. Returns `fn`'s value. |
+| `tracingChannel(lib, event)` | A `trace` bound to one `(lib, event)` pair. |
+| `onDiagnostic(lib, event?, handler, opts?)` | Subscribe to one channel or every `agora:<lib>:*` channel. See [Consumers](/docs/diagnostics/consumers). |
+| `unsubscribeAll()` | Tear down every live `onDiagnostic` subscription (called on shutdown). |
+| `channelName(lib, event)` | The `agora:<lib>:<event>` string. |
+| `traceChannelNames(lib, event)` | The five span sub-channel names. |
+| `getChannel(lib, event)` | The memoized `diagnostics_channel` for a pair (also registers its name). |
+| `CHANNEL_PREFIX` | `'agora'`. |
+| `SCHEMA_VERSION` / `SPAN_SCHEMA_VERSION` | `1` — envelope schema versions stamped as `v`. |
+| `registeredChannels()` | Snapshot of every registered base channel name. |
+| `onChannelRegistered(cb)` | Notified once per future channel registration; returns an unsubscribe. |
+| `parseChannelName(name)` | Parse `agora:<lib>:<event>` into `{ lib, event }`, or `null`. |
+| `createChannelSelector(selection, forward)` | Shared engine for relays — subscribe `forward` to matched channels. |
+| `setContextAccessor(accessor \| null)` | Register the accessor `emit`/`trace` read `traceId` from. |
+| `CONTEXT_ACCESSOR` | Shared DI token for the optional context accessor. |
+| `capability(lib, name)` | Mint the `Symbol.for('@agora/<lib>:<name>')` capability token. |
+| `assertCapabilityNaming(lib, tokens)` | Conformance helper: assert tokens follow the canonical naming. |
+| `EMIT_SLOT` | `Symbol.for('@agora/diagnostics:emit')` — the global slot `emit` is published on. |
+
+## The capability protocol
+
+The `@agora/*` family wires optional peers through `Symbol.for('@agora/<lib>:<name>')` slots on `globalThis`, so a producer and consumer in different repos meet without importing each other (and no-op gracefully when a peer is absent). `capability(lib, name)` is the canonical factory for those tokens:
+
+```ts
+import { capability, assertCapabilityNaming } from '@agora/diagnostics'
+
+const ACCESSOR = capability('context', 'accessor') // Symbol.for('@agora/context:accessor')
+
+// In a contract test, guard against naming drift:
+assertCapabilityNaming('context', { ACCESSOR })
+```
+
+This is the same mechanism `emit` itself uses: it publishes onto `EMIT_SLOT` at module load, so other Agora libs can republish through `globalThis[Symbol.for('@agora/diagnostics:emit')]` structurally — never importing this package, no-op when it's absent.
+
+## Where to go next
+
+- [Consumers](/docs/diagnostics/consumers) — observe events, write your own subscriber, assert in tests.
+- [Transports](/docs/diagnostics/transports) — fan events out across processes over Redis or `@adonisjs/queue`.
+- [OpenTelemetry](/docs/diagnostics/opentelemetry) — the zero-config span bridge.

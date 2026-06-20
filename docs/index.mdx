@@ -1,0 +1,94 @@
+---
+title: Introduction
+description: A zero-dependency diagnostics bus over node:diagnostics_channel — emit once, observe anywhere, with an OpenTelemetry auto-bridge.
+icon: Activity
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+**`@agora/diagnostics`** is a tiny, standard convention for `@agora/*` AdonisJS libraries to emit observability events over Node's built-in [`diagnostics_channel`](https://nodejs.org/api/diagnostics_channel.html). A library calls `emit('billing', 'invoice-paid', payload)` — or wraps an operation in `trace('authz', 'decision', fn)` — and is done. Whoever wants to observe it subscribes. It costs essentially nothing when nobody is listening, and never throws.
+
+<Callout type="info" title="Alpha">
+Published as `0.1.0`. The API on these pages matches the current source. Pin a version in production.
+</Callout>
+
+## The point: producers stay decoupled from consumers
+
+The key idea is that **the channel is neutral**. A library that emits a diagnostic event doesn't know — and doesn't care — who reads it. [Telescope](/docs/telescope) is one consumer (the batteries-included one), but the same event can just as easily become an OpenTelemetry span, feed an APM tool, drive a custom logger, fan out to other processes over a [transport](/docs/diagnostics/transports), or back an assertion in a test. See [Consumers](/docs/diagnostics/consumers).
+
+This is why the bus is a separate, dependency-free package: if emitting required Telescope (or OTel, or Redis), every producing library would be coupled to it. Instead, producers depend only on this thin layer, and observability is opt-in on the *consumer* side.
+
+## The model
+
+Two emit surfaces, both over `node:diagnostics_channel`, both free when unobserved:
+
+- **POINT events** — `emit(lib, event, payload)` publishes one `DiagnosticEvent` on `agora:<lib>:<event>`. Use it for "something happened" facts.
+- **SPANS** — `trace(lib, event, fn)` runs `fn` and publishes start / end / error (plus async phases) on `agora:<lib>:<event>:<phase>`, with timing and a shared `spanId`. Use it for "this operation took N ms and succeeded/failed".
+
+Every channel name shares the prefix **`agora`** and carries a standard envelope:
+
+```ts
+interface DiagnosticEvent<TPayload = unknown> {
+  v?: number;        // SCHEMA_VERSION (1) — observers treat absent as v1
+  ts: number;        // Date.now() at publish time
+  lib: string;       // the <lib>, e.g. "billing"
+  event: string;     // the <event>, e.g. "invoice-paid"
+  traceId?: string;  // auto-filled from @agora/context when present
+  payload: TPayload; // your library-defined data
+}
+```
+
+## Why `diagnostics_channel`?
+
+It's a Node built-in, so the bus has **zero runtime dependencies**. Channels are process-global and resolved by name, so a producer and an observer in different packages — that never import each other — meet on the same channel. And `emit` gates on `channel.hasSubscribers`: with no observer attached, the envelope is never even built, so libraries can emit by default and pay nothing in production.
+
+## Quickstart
+
+<Steps>
+<Step>
+
+Install and configure:
+
+```sh title="terminal"
+node ace add @agora/diagnostics
+```
+
+</Step>
+<Step>
+
+Emit an event from anywhere — it's published only when something is subscribed:
+
+```ts
+import { emit } from '@agora/diagnostics'
+
+emit('billing', 'invoice-paid', { invoiceId: 'inv_123', amount: 4200 })
+```
+
+</Step>
+<Step>
+
+Observe it from any consumer — the simplest being `onDiagnostic`, registered in `start/diagnostics.ts`. See [Getting Started](/docs/diagnostics/getting-started) for the full flow and trace correlation.
+
+</Step>
+</Steps>
+
+## Explore
+
+One package, `@agora/diagnostics`. Cross-process fan-out is a config choice, not an extra package — see [Transports](/docs/diagnostics/transports).
+
+<Cards>
+  <Card title="Getting started" href="/docs/diagnostics/getting-started" description="The core bus — emit(), trace(), onDiagnostic(), the capability protocol, and the OTel auto-bridge." />
+  <Card title="Consumers" href="/docs/diagnostics/consumers" description="Subscribe and observe — built-in consumers, custom subscribers, and test assertions." />
+  <Card title="Transports" href="/docs/diagnostics/transports" description="Fan events out across processes — pick a Redis or @adonisjs/queue transport in config/diagnostics.ts." />
+  <Card title="OpenTelemetry" href="/docs/diagnostics/opentelemetry" description="The auto-bridge — every trace() span becomes a real OTel span when an SDK is present." />
+</Cards>
+
+## Where to go next
+
+<Cards>
+  <Card title="Getting Started" href="/docs/diagnostics/getting-started" description="Install, configure, emit POINT events and trace() spans, and auto-fill traceId from @agora/context." />
+  <Card title="Consumers" href="/docs/diagnostics/consumers" description="Observe events with onDiagnostic, write your own subscriber, and assert on emits in tests." />
+  <Card title="OpenTelemetry" href="/docs/diagnostics/opentelemetry" description="The zero-config bridge that turns trace() spans into real OTel spans and publishes the W3C traceparent." />
+</Cards>

@@ -1,0 +1,142 @@
+---
+title: Consumers
+description: Observe diagnostic events from anywhere — onDiagnostic, the channel registry, your own subscriber, OpenTelemetry, an APM, and tests.
+icon: Ear
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+A diagnostic event is just a message on a Node channel. **Anything can read it.** This page shows the built-in observer (`onDiagnostic`), the lower-level registry it's built on, and how to write your own consumer in a few lines.
+
+## `onDiagnostic` — the built-in observer
+
+`onDiagnostic` is the framework-agnostic heart of the convention: subscribe a handler to one channel, or to every channel of a lib (current *and* future). It returns an unsubscribe function, and a handler that throws or rejects never propagates back to the emitter.
+
+```ts title="start/diagnostics.ts"
+import { onDiagnostic } from '@agora/diagnostics'
+
+// Every agora:resilience:* channel — including ones registered later:
+onDiagnostic('resilience', (event) => {
+  console.log(event.lib, event.event, event.traceId, event.payload)
+})
+
+// One exact channel:
+onDiagnostic('authz', 'decision', (event) => {
+  if ((event.payload as any).allowed === false) alertOnDenial(event)
+})
+```
+
+This is where the `configure` step pays off: `start/diagnostics.ts` is a preload file, so anything you register here is subscribed before the app serves traffic. On graceful shutdown the provider calls `unsubscribeAll()`, tearing down every `onDiagnostic` subscription so a reloaded process (dev watcher, tests) doesn't leak listeners.
+
+<Callout type="warn" title="Keep handlers cheap">
+A subscriber runs **inline** on the producer's `emit`/`trace` call. The emit path is guarded (`hasSubscribers`, never throws), but heavy work in a *handler* (network, disk) lands on the hot path. Batch, queue, or hand off to a worker. For cross-process fan-out, configure a [transport](/docs/diagnostics/transports).
+</Callout>
+
+### Async handlers
+
+A handler may return a promise. A rejected promise is routed to `onError` (or silently swallowed) so a buggy handler can never break the synchronous `emit()`/`trace()` that triggered it:
+
+```ts
+onDiagnostic('billing', 'invoice-paid', async (event) => {
+  await ship(event)
+}, {
+  onError: (err, event) => logger.error({ err, event }, 'diagnostics handler failed'),
+})
+```
+
+## The registry (and the wildcard problem)
+
+Node's `diagnostics_channel` has **no wildcard subscription**: you can only subscribe to a channel by its exact name. Since channels are named per event (`agora:authz:decision`, `agora:billing:invoice-paid`, …), a generic consumer needs to know which channels exist. That's what the registry is for — and it's what `onDiagnostic`'s wildcard form is built on:
+
+```ts
+import diagnostics_channel from 'node:diagnostics_channel'
+import { registeredChannels, onChannelRegistered } from '@agora/diagnostics'
+import type { DiagnosticEvent } from '@agora/diagnostics'
+
+function observeAll(handler: (e: DiagnosticEvent) => void) {
+  const subscribe = (name: string) =>
+    diagnostics_channel.subscribe(name, (msg) => handler(msg as DiagnosticEvent))
+
+  // every channel registered so far…
+  for (const name of registeredChannels()) subscribe(name)
+  // …and any registered later
+  return onChannelRegistered(subscribe)
+}
+```
+
+`registeredChannels` returns every base channel name touched through `getChannel`/`emit`/`trace`; `onChannelRegistered` fires once per *future* registration (it does not replay existing names — pair the two as above). The registry lives on a cross-copy-stable `Symbol.for('@agora/diagnostics:registry')` global slot, so even if more than one physical copy of the package is loaded, every copy sees the same set.
+
+<Callout type="info" title="Reaching span sub-channels">
+The registry holds **base** names (`agora:<lib>:<event>`), not the `:start`/`:end`/… span suffixes. A span-aware observer derives the five sub-channels from a base name with `traceChannelNames(lib, event)` after parsing it via `parseChannelName(name)`. This is exactly what the [OTel bridge](/docs/diagnostics/opentelemetry) does.
+</Callout>
+
+## A custom subscriber
+
+You don't need a generic observer if you only care about one event. Subscribe to a single channel by name with `channelName`:
+
+```ts
+import diagnostics_channel from 'node:diagnostics_channel'
+import { channelName } from '@agora/diagnostics'
+import type { DiagnosticEvent } from '@agora/diagnostics'
+
+diagnostics_channel.subscribe(channelName('authz', 'decision'), (msg) => {
+  const e = msg as DiagnosticEvent
+  if ((e.payload as any).allowed === false) alertOnRepeatedDenials(e)
+})
+```
+
+This is the lowest-overhead way to react to a specific ecosystem event — a denial alert, a metric counter, a webhook. (`onDiagnostic('authz', 'decision', fn)` is the same thing with disposer management and error isolation handled for you.)
+
+## OpenTelemetry
+
+If an OTel SDK is installed, you get span reconstruction for free — the provider starts the bridge automatically. See [OpenTelemetry](/docs/diagnostics/opentelemetry). If you want to map POINT events onto the active span yourself:
+
+```ts
+import { trace } from '@opentelemetry/api'
+
+onDiagnostic('billing', (e) => {
+  trace.getActiveSpan()?.addEvent(`agora.${e.lib}.${e.event}`, {
+    'agora.lib': e.lib,
+    'agora.event': e.event,
+    'agora.trace_id': e.traceId ?? '',
+  })
+})
+```
+
+## An APM or a logger
+
+Forwarding to Datadog, Sentry, an HTTP collector, or just structured logs is the same shape — subscribe and ship:
+
+```ts
+onDiagnostic('billing', (e) => {
+  logger.info('agora.diagnostic', {
+    lib: e.lib,
+    event: e.event,
+    traceId: e.traceId,
+    ts: e.ts,
+    ...(e.payload as object),
+  })
+})
+```
+
+## In tests
+
+Subscribing makes events assertable. Drop a collector in your test, exercise the code, and check what was emitted:
+
+```ts
+import { onDiagnostic } from '@agora/diagnostics'
+import type { DiagnosticEvent } from '@agora/diagnostics'
+
+const seen: DiagnosticEvent[] = []
+const off = onDiagnostic('authz', 'decision', (e) => seen.push(e))
+
+// … exercise the code that emits …
+
+off()
+expect(seen).toHaveLength(1)
+expect((seen[0].payload as any).allowed).toBe(false)
+```
+
+<Callout type="info">
+By design, **events are only built when something is subscribed** — so asserting on them requires an active subscription, exactly as above. For span assertions, subscribe to the sub-channels from `traceChannelNames(lib, event)` and inspect the `phase`/`durationMs`/`spanId` fields of each `SpanEvent`.
+</Callout>

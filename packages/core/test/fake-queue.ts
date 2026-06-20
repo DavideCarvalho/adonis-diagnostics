@@ -1,4 +1,4 @@
-import type { DiagnosticsEventEnvelope, DiagnosticsEventJobLike } from '../src/relay.js';
+import type { DiagnosticsEventEnvelope, DiagnosticsEventJobLike } from '../src/transports/queue.js';
 
 /**
  * In-memory stand-in for the `@adonisjs/queue` job used by the relay. Records every dispatched

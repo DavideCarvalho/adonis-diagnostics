@@ -48,8 +48,7 @@ onDiagnostic('authz', 'decision', (event) => audit(event)) // one exact channel
 
 | Package | What |
 |---|---|
-| [`@agora/diagnostics`](./packages/core) | emit / trace / onDiagnostic over `node:diagnostics_channel` |
-| [`@agora/diagnostics-redis`](./packages/redis) | relay events across processes over `@adonisjs/redis` pub/sub |
+| [`@agora/diagnostics`](./packages/core) | emit / trace / onDiagnostic over `node:diagnostics_channel`, plus the OpenTelemetry bridge and the cross-process Redis / `@adonisjs/queue` transports (selected in `config/diagnostics.ts`) |
 
 ## The Agora ecosystem
 

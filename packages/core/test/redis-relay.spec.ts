@@ -1,6 +1,8 @@
-import { type DiagnosticEvent, emit, getChannel, resetRegistry } from '@agora/diagnostics';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createDiagnosticsRedisRelay } from '../src/relay.js';
+import { emit, getChannel } from '../src/channel.js';
+import { resetRegistry } from '../src/registry.js';
+import { createDiagnosticsRedisRelay } from '../src/transports/redis.js';
+import type { DiagnosticEvent } from '../src/types.js';
 import { FakeHub, FakeRedis } from './fake-redis.js';
 
 const RELAY_CHANNEL = 'agora:diagnostics:relay';

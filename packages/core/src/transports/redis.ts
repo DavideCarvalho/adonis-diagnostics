@@ -1,10 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import {
-  type ChannelRef,
-  type DiagnosticEvent,
-  createChannelSelector,
-  getChannel,
-} from '@agora/diagnostics';
+import { getChannel } from '../channel.js';
+import { type ChannelRef, createChannelSelector } from '../relay.js';
+import type { DiagnosticEvent } from '../types.js';
 
 export type { ChannelRef };
 
@@ -39,9 +36,12 @@ const DEFAULT_REDIS_CHANNEL = 'agora:diagnostics:relay';
 /**
  * Relay diagnostics events across processes over Redis pub/sub. Forwards selected local
  * `agora:<lib>:<event>` channels to Redis and re-emits Redis-received events onto the local bus, so
- * `@OnDiagnostic` handlers / `getChannel(...).subscribe(...)` fire cross-process. Loop-safe via nodeId
+ * `onDiagnostic` handlers / `getChannel(...).subscribe(...)` fire cross-process. Loop-safe via nodeId
  * echo suppression and a re-emit guard. Never throws into `emit()` or the Redis handler. Does NOT
  * close the `pub`/`sub` connections — the caller owns them.
+ *
+ * Usually you don't call this directly: `config/diagnostics.ts` selects it via
+ * `transports.redis({ ... })` and the provider starts it for you.
  *
  * @returns a teardown that removes all local subscriptions and the Redis message handler.
  */

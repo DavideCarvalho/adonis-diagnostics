@@ -16,6 +16,15 @@ export {
 } from './channel.js';
 export { assertCapabilityNaming } from './conformance.js';
 export {
+  type DiagnosticsConfig,
+  defineConfig,
+  type QueueTransportConfig,
+  type RedisTransportConfig,
+  type TransportContext,
+  type TransportProvider,
+  transports,
+} from './define_config.js';
+export {
   CONTEXT_ACCESSOR,
   type ContextAccessor,
   type ContextStore,
@@ -51,6 +60,20 @@ export {
   type TracingChannel,
   tracingChannel,
 } from './trace.js';
+export {
+  createDiagnosticsRedisRelay,
+  type DiagnosticsRedisRelayOptions,
+  type RedisLike,
+} from './transports/redis.js';
+export {
+  bindRelayReEmitter,
+  createDiagnosticsQueueRelay,
+  type DiagnosticsEventEnvelope,
+  type DiagnosticsEventJobLike,
+  type DiagnosticsQueueRelayOptions,
+  getActiveReEmitter,
+  type RelayReEmitter,
+} from './transports/queue.js';
 export type {
   ChannelRegistry,
   DiagnosticEvent,

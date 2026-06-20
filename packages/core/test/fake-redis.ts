@@ -1,4 +1,4 @@
-import type { RedisLike } from '../src/relay.js';
+import type { RedisLike } from '../src/transports/redis.js';
 
 /** Shared in-memory pub/sub hub. FakeRedis clients on the same hub deliver to each other
  *  synchronously — simulating separate processes/connections in tests. */

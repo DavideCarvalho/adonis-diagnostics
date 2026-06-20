@@ -1,7 +1,9 @@
-import { type DiagnosticEvent, getChannel, resetRegistry } from '@agora/diagnostics';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import DiagnosticsEventJob from '../src/diagnostics_event_job.js';
-import { createDiagnosticsQueueRelay } from '../src/relay.js';
+import { getChannel } from '../src/channel.js';
+import { resetRegistry } from '../src/registry.js';
+import DiagnosticsEventJob from '../src/transports/diagnostics_event_job.js';
+import { createDiagnosticsQueueRelay } from '../src/transports/queue.js';
+import type { DiagnosticEvent } from '../src/types.js';
 import { FakeJob } from './fake-queue.js';
 
 /** Hydrate the real job the way a worker would, then run its `execute()`. */

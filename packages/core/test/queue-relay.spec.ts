@@ -1,6 +1,8 @@
-import { type DiagnosticEvent, emit, getChannel, resetRegistry } from '@agora/diagnostics';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createDiagnosticsQueueRelay, getActiveReEmitter } from '../src/relay.js';
+import { emit, getChannel } from '../src/channel.js';
+import { resetRegistry } from '../src/registry.js';
+import { createDiagnosticsQueueRelay, getActiveReEmitter } from '../src/transports/queue.js';
+import type { DiagnosticEvent } from '../src/types.js';
 import { FakeJob } from './fake-queue.js';
 
 /** Simulate a worker in another process receiving the job: hand the envelope to the bound re-emitter. */

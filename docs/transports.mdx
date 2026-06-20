@@ -1,0 +1,130 @@
+---
+title: Transports
+description: Fan diagnostics events out across processes — pick a transport (Redis or @adonisjs/queue) in config/diagnostics.ts, exactly like a session or cache store.
+icon: Radio
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
+`node:diagnostics_channel` is **process-local**: an event emitted in your web process is invisible to a worker, and vice versa. A **transport** relays selected `agora:<lib>:<event>` channels across processes so `onDiagnostic` handlers (and any `getChannel(...).subscribe(...)`) fire everywhere.
+
+Transports ship **inside `@agora/diagnostics`** and are selected in `config/diagnostics.ts` — there are no separate `@agora/diagnostics-redis` / `-queue` packages. You pick a `default` transport and list the ones you use under `transports`, exactly the way `@adonisjs/session` picks a `store` or `@adonisjs/cache` picks a store driver. The driver's peer dependency (`@adonisjs/redis`, `@adonisjs/queue`) is imported lazily, only when you actually select it.
+
+## Configuring a transport
+
+<Steps>
+<Step>
+
+Pick a `default` and declare your transports with the `transports` factory:
+
+```ts title="config/diagnostics.ts"
+import { defineConfig, transports } from '@agora/diagnostics'
+
+export default defineConfig({
+  otel: true,
+
+  // The transport whose relay starts in this process.
+  default: 'redis',
+
+  // Which local channels to fan out across processes.
+  forward: { libs: ['resilience', 'durable'] }, // or { all: true }
+
+  transports: {
+    redis: transports.redis({ connection: 'main' }),   // @adonisjs/redis + ioredis
+    queue: transports.queue({ queue: 'diagnostics' }), // @adonisjs/queue
+  },
+})
+```
+
+</Step>
+<Step>
+
+Install the driver's peer deps for whichever transport you selected:
+
+<Tabs items={['redis', 'queue']}>
+<Tab value="redis">
+
+```sh title="terminal"
+npm i @adonisjs/redis ioredis
+```
+
+</Tab>
+<Tab value="queue">
+
+```sh title="terminal"
+npm i @adonisjs/queue
+```
+
+</Tab>
+</Tabs>
+
+</Step>
+</Steps>
+
+<Callout type="info" title="Local-only by default">
+With no `default` set, diagnostics stays in-process — `emit`/`trace`/`onDiagnostic` all still work, just within the one process. Setting `default` to a name that isn't in `transports` throws at boot, so a typo never silently disables fan-out.
+</Callout>
+
+### What gets forwarded
+
+`forward` is a single `ChannelSelection`, shared by whichever transport starts:
+
+| Field | Meaning |
+| --- | --- |
+| `libs` | Forward **every** event of these libs — including channels registered later (e.g. `['resilience', 'durable']`). |
+| `channels` | Forward these exact `{ lib, event }` pairs, in addition to `libs`. |
+| `all` | Forward **every** `agora:` channel. Overrides `libs`/`channels`. |
+| `nodeId` (top-level) | Unique id for this process, used for echo suppression. Defaults to a random id per process. |
+
+Both transports share the same selection engine (`createChannelSelector`) and the same loop-guard design — they differ only in how a selected event leaves the process.
+
+## The Redis transport
+
+`transports.redis(config)` relays over [`@adonisjs/redis`](https://docs.adonisjs.com/guides/digging-deeper/redis) pub/sub. A forwarded event is published to a Redis channel; every other process subscribed to that channel re-emits it onto its local bus. Echoes are suppressed by `nodeId`, and a re-emit guard stops a re-emitted event from being forwarded back — so events never loop.
+
+```ts
+transports.redis({
+  connection: 'main',                 // @adonisjs/redis connection name (default: the default one)
+  redisChannel: 'agora:diagnostics:relay', // Redis channel to relay on (this is the default)
+})
+```
+
+It uses the raw ioredis client behind the AdonisJS connection (`publish`/`subscribe`) and a `duplicate()` for the subscriber leg. The connections are owned by `@adonisjs/redis`; the relay never closes them.
+
+## The queue transport
+
+`transports.queue(config)` relays over [`@adonisjs/queue`](https://github.com/adonisjs/queue). A forwarded event is dispatched as the `agora.diagnostics.event` job; a **worker running in another process** executes that job and re-emits the event onto its local bus.
+
+```ts
+transports.queue({
+  queue: 'diagnostics', // queue to dispatch onto — omit for the job's default queue
+})
+```
+
+A worker must be running to receive forwarded events:
+
+```sh title="terminal"
+node ace queue:work diagnostics
+```
+
+The provider registers the job class with the queue `Locator` at boot, so the worker resolves it by name (`agora.diagnostics.event`) even if your `locations` glob doesn't include it. Forwarding is fire-and-forget: a queue outage is logged, never thrown into `emit()`.
+
+<Callout type="warn" title="A queue is fan-out, not request/response">
+The relay only dispatches; it never waits. That fits diagnostics (you want events to spread, not to block the emitter). Pick the queue transport when a queue is already your cross-process backbone; pick Redis when you want a dedicated low-latency pub/sub path.
+</Callout>
+
+## Advanced: the relays without AdonisJS
+
+The transport factories wrap two framework-agnostic functions, exported for non-Adonis use, tests, or custom wiring. They take the raw collaborators (a Redis client pair, or a job with `dispatch`) and the same selection options:
+
+```ts
+import { createDiagnosticsRedisRelay, createDiagnosticsQueueRelay } from '@agora/diagnostics'
+
+const stop = createDiagnosticsRedisRelay({ pub, sub, libs: ['resilience'], nodeId: 'A' })
+// …later
+stop()
+```
+
+For the queue side, `bindRelayReEmitter` / `getActiveReEmitter` expose the process re-emitter the job uses, for worker-only processes that forward nothing but must still re-emit. See the source for the full surface.

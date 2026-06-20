@@ -1,4 +1,5 @@
 import type { ApplicationService } from '@adonisjs/core/types';
+import type { DiagnosticsConfig } from '../src/define_config.js';
 import { unsubscribeAll } from '../src/subscriber.js';
 
 /**
@@ -27,6 +28,7 @@ import { unsubscribeAll } from '../src/subscriber.js';
  */
 export default class DiagnosticsProvider {
   #stopOtel: (() => void) | null = null;
+  #stopTransport: (() => void) | null = null;
 
   constructor(protected app: ApplicationService) {}
 
@@ -47,7 +49,33 @@ export default class DiagnosticsProvider {
     this.#stopOtel = otel.stop;
   }
 
+  /**
+   * Start the configured cross-process transport, if any. Runs after the container is ready so the
+   * transport can resolve connections/loggers. `config.default` names the transport (a key of
+   * `config.transports`) whose relay starts in this process; omit it for local-only diagnostics.
+   */
+  async ready() {
+    const config = this.app.config.get<DiagnosticsConfig>('diagnostics', {});
+    const name = config.default;
+    if (!name) return;
+
+    const provider = config.transports?.[name];
+    if (!provider) {
+      throw new Error(
+        `@agora/diagnostics: config.default is "${name}", but config.transports.${name} is not defined`,
+      );
+    }
+
+    this.#stopTransport = await provider({
+      app: this.app,
+      forward: config.forward ?? {},
+      ...(config.nodeId !== undefined ? { nodeId: config.nodeId } : {}),
+    });
+  }
+
   async shutdown() {
+    this.#stopTransport?.();
+    this.#stopTransport = null;
     this.#stopOtel?.();
     this.#stopOtel = null;
     unsubscribeAll();

@@ -1,0 +1,14 @@
+{
+  "title": "Diagnostics",
+  "description": "A zero-dependency diagnostics bus over node:diagnostics_channel — emit once, observe anywhere, with an OpenTelemetry auto-bridge.",
+  "icon": "Activity",
+  "root": true,
+  "pages": [
+    "index",
+    "getting-started",
+    "consumers",
+    "transports",
+    "---Integrations---",
+    "opentelemetry"
+  ]
+}
