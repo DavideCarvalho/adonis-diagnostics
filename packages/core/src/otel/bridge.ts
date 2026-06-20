@@ -9,6 +9,7 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { onChannelRegistered, registeredChannels } from '../registry.js';
+import { parseChannelName } from '../relay.js';
 import { traceChannelNames } from '../trace.js';
 import type { DiagnosticEvent, SpanEvent } from '../types.js';
 import { clearTraceparentSlot, publishTraceparentSlot } from './traceparent.js';
@@ -303,16 +304,12 @@ function scalarAttr(value: unknown): AttributeValue | undefined {
 
 /**
  * Derive the five span sub-channel names from an `agora:<lib>:<event>` base
- * name, or `null` when the name doesn't match the convention. Prefers the core
- * {@link traceChannelNames} builder so the suffixes stay in lockstep.
+ * name, or `null` when the name doesn't match the convention. Parses the name
+ * through the shared {@link parseChannelName} (single source of the lib/event
+ * boundary) and builds the suffixes via {@link traceChannelNames}.
  */
 function deriveSpanChannels(base: string): ReturnType<typeof traceChannelNames> | null {
-  // base is `agora:<lib>:<event>` — split off the prefix, keep <lib> and the
-  // rest as <event> (events may contain ':' in theory; rejoin defensively).
-  const parts = base.split(':');
-  if (parts.length < 3 || parts[0] !== 'agora') return null;
-  const lib = parts[1];
-  const event = parts.slice(2).join(':');
-  if (lib === undefined || lib === '' || event === '') return null;
-  return traceChannelNames(lib, event);
+  const ref = parseChannelName(base);
+  if (ref === null) return null;
+  return traceChannelNames(ref.lib, ref.event);
 }

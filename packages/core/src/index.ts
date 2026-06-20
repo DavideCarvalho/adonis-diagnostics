@@ -25,6 +25,13 @@ export {
   resetRegistry,
 } from './registry.js';
 export {
+  type ChannelRef,
+  type ChannelSelection,
+  type ChannelSelector,
+  createChannelSelector,
+  parseChannelName,
+} from './relay.js';
+export {
   type DiagnosticHandler,
   onDiagnostic,
   type OnDiagnosticOptions,

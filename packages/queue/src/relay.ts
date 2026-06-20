@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import {
-  CHANNEL_PREFIX,
+  type ChannelRef,
   type DiagnosticEvent,
-  channelName,
+  createChannelSelector,
   getChannel,
-  onChannelRegistered,
-  registeredChannels,
 } from '@agora/diagnostics';
+
+export type { ChannelRef };
 
 /**
  * The envelope a relayed diagnostics event is dispatched as. `node` is the id of the process that
@@ -29,11 +29,6 @@ export interface DiagnosticsEventJobLike {
   dispatch(payload: DiagnosticsEventEnvelope): PromiseLike<unknown> | unknown;
 }
 
-export interface ChannelRef {
-  lib: string;
-  event: string;
-}
-
 export interface DiagnosticsQueueRelayOptions {
   /**
    * The job class used to forward events. Its `dispatch(envelope)` is called for each selected local
@@ -54,19 +49,6 @@ export interface DiagnosticsQueueRelayOptions {
    * outage never throws into `emit()`; this hook lets callers log the failure. Default: ignored.
    */
   onDispatchError?: (error: unknown) => void;
-}
-
-/**
- * Strip the `agora:` prefix and split on the FIRST colon — the event segment may contain dots
- * (e.g. `durable:run.failed`), but the lib/event boundary is the first colon after the prefix.
- */
-function parseChannelName(name: string): ChannelRef | null {
-  const prefix = `${CHANNEL_PREFIX}:`;
-  if (!name.startsWith(prefix)) return null;
-  const rest = name.slice(prefix.length);
-  const idx = rest.indexOf(':');
-  if (idx <= 0 || idx === rest.length - 1) return null;
-  return { lib: rest.slice(0, idx), event: rest.slice(idx + 1) };
 }
 
 /**
@@ -146,16 +128,10 @@ export function getActiveReEmitter(): RelayReEmitter | null {
 export function createDiagnosticsQueueRelay(options: DiagnosticsQueueRelayOptions): () => void {
   const { job } = options;
   const nodeId = options.nodeId ?? randomUUID();
-  const forwardAll = options.all === true;
-  const libs = options.libs ?? [];
-  const exact = options.channels ?? [];
   const onDispatchError = options.onDispatchError;
 
   const guard = new ReEmitGuard(nodeId);
   const unbindReEmitter = bindRelayReEmitter(guard);
-
-  const subscriptions: Array<{ ref: ChannelRef; listener: (msg: unknown) => void }> = [];
-  const subscribed = new Set<string>();
 
   const forward = (msg: unknown): void => {
     if (typeof msg !== 'object' || msg === null) return;
@@ -172,46 +148,10 @@ export function createDiagnosticsQueueRelay(options: DiagnosticsQueueRelayOption
     }
   };
 
-  const subscribeRef = (ref: ChannelRef): void => {
-    const name = channelName(ref.lib, ref.event);
-    if (subscribed.has(name)) return;
-    getChannel(ref.lib, ref.event).subscribe(forward);
-    subscribed.add(name);
-    subscriptions.push({ ref, listener: forward });
-  };
-
-  const wildcardMatches = (name: string): boolean => {
-    if (forwardAll) return name.startsWith(`${CHANNEL_PREFIX}:`);
-    return libs.some((lib) => name.startsWith(`${CHANNEL_PREFIX}:${lib}:`));
-  };
-
-  for (const ref of exact) subscribeRef(ref);
-
-  const hasWildcard = forwardAll || libs.length > 0;
-  if (hasWildcard) {
-    for (const name of registeredChannels()) {
-      if (wildcardMatches(name)) {
-        const ref = parseChannelName(name);
-        if (ref) subscribeRef(ref);
-      }
-    }
-  }
-  const offRegistered = hasWildcard
-    ? onChannelRegistered((name) => {
-        if (wildcardMatches(name)) {
-          const ref = parseChannelName(name);
-          if (ref) subscribeRef(ref);
-        }
-      })
-    : null;
+  const selector = createChannelSelector(options, forward);
 
   return () => {
-    for (const { ref, listener } of subscriptions) {
-      getChannel(ref.lib, ref.event).unsubscribe(listener);
-    }
-    subscriptions.length = 0;
-    subscribed.clear();
-    offRegistered?.();
+    selector.stop();
     unbindReEmitter();
   };
 }

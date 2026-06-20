@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import {
-  CHANNEL_PREFIX,
+  type ChannelRef,
   type DiagnosticEvent,
-  channelName,
+  createChannelSelector,
   getChannel,
-  onChannelRegistered,
-  registeredChannels,
 } from '@agora/diagnostics';
+
+export type { ChannelRef };
 
 /** The minimal Redis pub/sub surface the relay uses. An ioredis instance satisfies it structurally. */
 export interface RedisLike {
@@ -15,11 +15,6 @@ export interface RedisLike {
   on(event: 'message', listener: (channel: string, message: string) => void): unknown;
   removeListener(event: 'message', listener: (channel: string, message: string) => void): unknown;
   unsubscribe(channel: string): unknown;
-}
-
-export interface ChannelRef {
-  lib: string;
-  event: string;
 }
 
 export interface DiagnosticsRedisRelayOptions {
@@ -41,17 +36,6 @@ export interface DiagnosticsRedisRelayOptions {
 
 const DEFAULT_REDIS_CHANNEL = 'agora:diagnostics:relay';
 
-/** Strip the `agora:` prefix and split on the FIRST colon — the event segment may contain dots
- *  (e.g. `durable:run.failed`), but the lib/event boundary is the first colon after the prefix. */
-function parseChannelName(name: string): ChannelRef | null {
-  const prefix = `${CHANNEL_PREFIX}:`;
-  if (!name.startsWith(prefix)) return null;
-  const rest = name.slice(prefix.length);
-  const idx = rest.indexOf(':');
-  if (idx <= 0 || idx === rest.length - 1) return null;
-  return { lib: rest.slice(0, idx), event: rest.slice(idx + 1) };
-}
-
 /**
  * Relay diagnostics events across processes over Redis pub/sub. Forwards selected local
  * `agora:<lib>:<event>` channels to Redis and re-emits Redis-received events onto the local bus, so
@@ -65,12 +49,7 @@ export function createDiagnosticsRedisRelay(options: DiagnosticsRedisRelayOption
   const { pub, sub } = options;
   const redisChannel = options.redisChannel ?? DEFAULT_REDIS_CHANNEL;
   const nodeId = options.nodeId ?? randomUUID();
-  const forwardAll = options.all === true;
-  const libs = options.libs ?? [];
-  const exact = options.channels ?? [];
 
-  const subscriptions: Array<{ ref: ChannelRef; listener: (msg: unknown) => void }> = [];
-  const subscribed = new Set<string>();
   const reEmitting = new WeakSet<object>();
 
   const forward = (msg: unknown): void => {
@@ -83,38 +62,7 @@ export function createDiagnosticsRedisRelay(options: DiagnosticsRedisRelayOption
     }
   };
 
-  const subscribeRef = (ref: ChannelRef): void => {
-    const name = channelName(ref.lib, ref.event);
-    if (subscribed.has(name)) return;
-    getChannel(ref.lib, ref.event).subscribe(forward);
-    subscribed.add(name);
-    subscriptions.push({ ref, listener: forward });
-  };
-
-  const wildcardMatches = (name: string): boolean => {
-    if (forwardAll) return name.startsWith(`${CHANNEL_PREFIX}:`);
-    return libs.some((lib) => name.startsWith(`${CHANNEL_PREFIX}:${lib}:`));
-  };
-
-  for (const ref of exact) subscribeRef(ref);
-
-  const hasWildcard = forwardAll || libs.length > 0;
-  if (hasWildcard) {
-    for (const name of registeredChannels()) {
-      if (wildcardMatches(name)) {
-        const ref = parseChannelName(name);
-        if (ref) subscribeRef(ref);
-      }
-    }
-  }
-  const offRegistered = hasWildcard
-    ? onChannelRegistered((name) => {
-        if (wildcardMatches(name)) {
-          const ref = parseChannelName(name);
-          if (ref) subscribeRef(ref);
-        }
-      })
-    : null;
+  const selector = createChannelSelector(options, forward);
 
   const onMessage = (channel: string, raw: string): void => {
     if (channel !== redisChannel) return;
@@ -141,12 +89,7 @@ export function createDiagnosticsRedisRelay(options: DiagnosticsRedisRelayOption
   sub.on('message', onMessage);
 
   return () => {
-    for (const { ref, listener } of subscriptions) {
-      getChannel(ref.lib, ref.event).unsubscribe(listener);
-    }
-    subscriptions.length = 0;
-    subscribed.clear();
-    offRegistered?.();
+    selector.stop();
     sub.removeListener('message', onMessage);
     sub.unsubscribe(redisChannel);
   };
