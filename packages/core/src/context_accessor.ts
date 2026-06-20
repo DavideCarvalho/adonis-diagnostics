@@ -11,6 +11,9 @@
  * `tenantId()` / `userRef()` / `get()` are all present so the structural match
  * stays exact and a future use of any of them is type-safe.
  */
+
+import { globalSlot } from './global-slot.js';
+
 export interface UserRef {
   type: string;
   id: string | number;
@@ -56,9 +59,7 @@ interface AccessorHolder {
 }
 
 const ACCESSOR_KEY = Symbol.for('@agora/diagnostics:accessor');
-const accessorStore = globalThis as typeof globalThis & { [ACCESSOR_KEY]?: AccessorHolder };
-const accessorHolder: AccessorHolder = accessorStore[ACCESSOR_KEY] ?? { current: null };
-accessorStore[ACCESSOR_KEY] = accessorHolder;
+const accessorHolder = globalSlot<AccessorHolder>(ACCESSOR_KEY, () => ({ current: null }));
 
 /** Register (or clear, with `null`) the accessor {@link emit} reads `traceId` from. */
 export function setContextAccessor(next: ContextAccessor | null): void {

@@ -1,5 +1,6 @@
 import diagnostics_channel from 'node:diagnostics_channel';
 import { CHANNEL_PREFIX, channelName } from './channel.js';
+import { globalSlot } from './global-slot.js';
 import { onChannelRegistered, registeredChannels } from './registry.js';
 import type { DiagnosticEvent } from './types.js';
 
@@ -27,9 +28,7 @@ interface ActiveSub {
  * — so subscriptions made through any physical copy of the package are disposed.
  */
 const DISPOSERS_KEY = Symbol.for('@agora/diagnostics:subscribers');
-const disposerStore = globalThis as typeof globalThis & { [DISPOSERS_KEY]?: Set<() => void> };
-const disposers: Set<() => void> = disposerStore[DISPOSERS_KEY] ?? new Set<() => void>();
-disposerStore[DISPOSERS_KEY] = disposers;
+const disposers = globalSlot<Set<() => void>>(DISPOSERS_KEY, () => new Set<() => void>());
 
 function invokeSafely(
   handler: DiagnosticHandler,

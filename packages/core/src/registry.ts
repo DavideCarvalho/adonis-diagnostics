@@ -10,6 +10,8 @@
  * {@link onChannelRegistered} for future additions.
  */
 
+import { globalSlot } from './global-slot.js';
+
 /**
  * The registry state, backed by a `Symbol.for` key on `globalThis`. Even when
  * more than one physical copy of this package is loaded (divergent version ranges
@@ -29,12 +31,10 @@ interface Registry {
 }
 
 const REGISTRY_KEY = Symbol.for('@agora/diagnostics:registry');
-const globalStore = globalThis as typeof globalThis & { [REGISTRY_KEY]?: Registry };
-const registry: Registry = globalStore[REGISTRY_KEY] ?? {
+const registry = globalSlot<Registry>(REGISTRY_KEY, () => ({
   channels: new Set<string>(),
   listeners: new Set<(name: string) => void>(),
-};
-globalStore[REGISTRY_KEY] = registry;
+}));
 const { channels, listeners } = registry;
 
 /**
