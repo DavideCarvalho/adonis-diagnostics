@@ -33,15 +33,18 @@ export default class DiagnosticsProvider {
   async boot() {
     const config = this.app.config.get<{ otel?: boolean } | undefined>('diagnostics', {});
     if (config?.otel === false) return;
+    // Dynamic so the @opentelemetry/api-importing bridge never loads without an
+    // OTel SDK present — keeping emit/trace OTel-free by default. Only the IMPORT
+    // is allowed to fail (module-not-found = OTel absent); a real bug inside
+    // start() must surface, not be silently swallowed as "OTel not installed".
+    let otel: typeof import('../src/otel/index.js');
     try {
-      // Dynamic so the @opentelemetry/api-importing bridge never loads without an
-      // OTel SDK present — keeping emit/trace OTel-free by default.
-      const otel = await import('../src/otel/index.js');
-      otel.start();
-      this.#stopOtel = otel.stop;
+      otel = await import('../src/otel/index.js');
     } catch {
-      // @opentelemetry/api is not installed — no OTel bridge, no-op.
+      return;
     }
+    otel.start();
+    this.#stopOtel = otel.stop;
   }
 
   async shutdown() {
