@@ -185,18 +185,17 @@ export class DiagnosticsOtelBridge {
         case 'start':
           this.#onStart(event);
           break;
-        // `end` for a SYNC op completes the span; for an ASYNC op it only marks
-        // the synchronous portion (asyncEnd carries the real result) — keep the
-        // span open and let asyncEnd/error close it. We distinguish by presence:
-        // the async `end` carries no `result`, only `durationMs`.
         case 'end':
-          this.#onEnd(event, /* allowOpenForAsync */ true);
+          // `end` fires for BOTH sync and async ops (mirroring Node's tracingChannel).
+          // Only a sync `end` completes the span; an async `end` is the synchronous
+          // prelude of a promise-returning op and `asyncEnd` will complete that one.
+          if (isCompletingEnd(event)) this.#closeOk(event);
+          break;
+        case 'asyncEnd':
+          this.#closeOk(event);
           break;
         case 'asyncStart':
           // The continuation began — nothing to record on the span itself.
-          break;
-        case 'asyncEnd':
-          this.#onEnd(event, /* allowOpenForAsync */ false);
           break;
         case 'error':
           this.#onError(event);
@@ -225,21 +224,10 @@ export class DiagnosticsOtelBridge {
     this.#enforceCap();
   }
 
-  /**
-   * Close a span OK. `end` (sync) closes immediately; the async `end` phase has
-   * no `result` and is followed by `asyncEnd` — so when `allowOpenForAsync` is
-   * set and this looks like the async `end` (no `result` key present), we leave
-   * the span open for `asyncEnd`. The async `end` and `asyncEnd` are
-   * disambiguated by phase, so this is only consulted for `phase === 'end'`.
-   */
-  #onEnd(event: SpanEvent, allowOpenForAsync: boolean): void {
+  /** Close a span OK, recording its result + duration. Shared by `end` and `asyncEnd`. */
+  #closeOk(event: SpanEvent): void {
     const span = this.#open.get(event.spanId);
     if (span === undefined) return;
-
-    // For phase 'end' that is the synchronous prelude of an async op, asyncEnd
-    // will follow with the result — defer closing. The sync 'end' carries a
-    // `result` key; the async 'end' does not.
-    if (allowOpenForAsync && event.phase === 'end' && !('result' in event)) return;
 
     if (event.result !== undefined) {
       const resultAttr = scalarAttr(event.result);
@@ -293,6 +281,18 @@ export class DiagnosticsOtelBridge {
       }
     }
   }
+}
+
+/**
+ * Whether a `phase: 'end'` event completes its span. trace.ts publishes `end` for
+ * both sync and async ops, but only the sync `end` carries a `result` key — the
+ * async `end` is the synchronous prelude (completed later by `asyncEnd`). The
+ * `result` value may itself be `undefined` (a sync fn that returns `undefined`),
+ * so this tests for the KEY's presence, which is the wire contract set by
+ * `publishPhase` in trace.ts, not the value.
+ */
+function isCompletingEnd(event: SpanEvent): boolean {
+  return 'result' in event;
 }
 
 /** Coerce a result into a single scalar attribute, or `undefined` if unusable. */
