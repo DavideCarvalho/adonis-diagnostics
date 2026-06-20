@@ -2,6 +2,11 @@
 export const VERSION = '0.1.0';
 
 export {
+  type CapabilityOf,
+  type CapabilityRegistry,
+  capability,
+} from './capability.js';
+export {
   CHANNEL_PREFIX,
   channelName,
   emit,
@@ -9,6 +14,7 @@ export {
   getChannel,
   SCHEMA_VERSION,
 } from './channel.js';
+export { assertCapabilityNaming } from './conformance.js';
 export {
   CONTEXT_ACCESSOR,
   type ContextAccessor,
