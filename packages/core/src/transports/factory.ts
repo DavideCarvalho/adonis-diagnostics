@@ -78,7 +78,9 @@ export const transports = {
       const { createDiagnosticsRedisRelay } = await import('./redis.js');
 
       const connection = config.connection
-        ? redisService.connection(config.connection as Parameters<typeof redisService.connection>[0])
+        ? redisService.connection(
+            config.connection as Parameters<typeof redisService.connection>[0],
+          )
         : redisService.connection();
       // The raw ioredis client behind the AdonisJS connection satisfies RedisLike.
       const pub = (connection as unknown as { ioConnection: RedisLike }).ioConnection;
