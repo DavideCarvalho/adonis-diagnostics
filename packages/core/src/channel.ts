@@ -1,4 +1,5 @@
 import diagnostics_channel, { type Channel } from 'node:diagnostics_channel';
+import { capability } from './capability.js';
 import { resolveTraceId } from './context_accessor.js';
 import { onRegistryReset, registerChannel } from './registry.js';
 import type { DiagnosticEvent, EmitOptions, EventOf, LibOf, PayloadOf } from './types.js';
@@ -114,6 +115,9 @@ export function emit<TLib extends LibOf, TEvent extends EventOf<TLib>>(
       event,
       traceId,
       payload,
+      // Only set the key when a duration was provided — omitting it keeps the
+      // envelope shape monomorphic (no undefined-valued key on common events).
+      ...(opts?.durationMs !== undefined && { durationMs: opts.durationMs }),
     };
     channel.publish(envelope);
   } catch {
@@ -129,5 +133,5 @@ export function emit<TLib extends LibOf, TEvent extends EventOf<TLib>>(
  * load — merely importing this package (which the provider does) wires it. Same
  * decoupling contract as `@agora/context`'s accessor slot.
  */
-export const EMIT_SLOT = Symbol.for('@agora/diagnostics:emit');
+export const EMIT_SLOT = capability('diagnostics', 'emit');
 (globalThis as Record<symbol, unknown>)[EMIT_SLOT] = emit;

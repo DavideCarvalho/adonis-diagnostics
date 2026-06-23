@@ -10,6 +10,7 @@
  * {@link onChannelRegistered} for future additions.
  */
 
+import { capability } from './capability.js';
 import { globalSlot } from './global-slot.js';
 
 /**
@@ -30,7 +31,7 @@ interface Registry {
   listeners: Set<(name: string) => void>;
 }
 
-const REGISTRY_KEY = Symbol.for('@agora/diagnostics:registry');
+const REGISTRY_KEY = capability('diagnostics', 'registry');
 const registry = globalSlot<Registry>(REGISTRY_KEY, () => ({
   channels: new Set<string>(),
   listeners: new Set<(name: string) => void>(),

@@ -28,6 +28,13 @@ export interface DiagnosticEvent<TPayload = unknown> {
   traceId?: string | undefined;
   /** The library-defined payload. Opaque to this package and to observers. */
   payload: TPayload;
+  /**
+   * Wall-clock duration of the operation this event describes, in milliseconds,
+   * when known. Lets observers build duration histograms (e.g. OTel histogram
+   * instruments) instead of only counters. Omit when the event is not tied to a
+   * timed operation. Stamped from {@link EmitOptions.durationMs} by `emit`.
+   */
+  durationMs?: number;
 }
 
 /**
@@ -172,6 +179,13 @@ export interface EmitOptions {
    * cheap probabilistic predicate, e.g. `{ sample: () => Math.random() < 0.1 }`.
    */
   sample?: () => boolean;
+  /**
+   * Wall-clock duration of the operation this event describes, in milliseconds.
+   * When provided, `emit` stamps it onto the {@link DiagnosticEvent} envelope as
+   * `durationMs`, letting downstream observers (e.g. the Telescope OTel exporter)
+   * build duration histograms instead of only counters.
+   */
+  durationMs?: number;
 }
 
 /** Optional per-`trace` overrides. */

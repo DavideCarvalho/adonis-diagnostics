@@ -1,4 +1,5 @@
 import { type Context, context, propagation } from '@opentelemetry/api';
+import { capability } from '../capability.js';
 
 /**
  * The cross-copy-stable global slot the ecosystem reads {@link otelTraceparent}
@@ -7,7 +8,7 @@ import { type Context, context, propagation } from '@opentelemetry/api';
  * traces on remote steps, so they never import this package and no-op when it is
  * absent. Same decoupling contract as `@agora/diagnostics`'s `EMIT_SLOT`.
  */
-export const TRACEPARENT_SLOT = Symbol.for('@agora/otel:traceparent');
+export const TRACEPARENT_SLOT = capability('otel', 'traceparent');
 
 type TraceparentFn = () => string | undefined;
 

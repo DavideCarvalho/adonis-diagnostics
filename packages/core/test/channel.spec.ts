@@ -58,6 +58,28 @@ describe('emit', () => {
     expect(cap.events[0]?.v).toBe(SCHEMA_VERSION);
   });
 
+  it('stamps opts.durationMs onto the envelope when provided', () => {
+    const cap = capture(channelName('billing', 'invoice-paid'));
+    stop = cap.stop;
+
+    emit('billing', 'invoice-paid', { ok: true }, { durationMs: 42 });
+
+    expect(cap.events).toHaveLength(1);
+    expect(cap.events[0]?.durationMs).toBe(42);
+  });
+
+  it('leaves durationMs absent (not just undefined) when not provided', () => {
+    const cap = capture(channelName('billing', 'invoice-paid'));
+    stop = cap.stop;
+
+    emit('billing', 'invoice-paid', { ok: true });
+
+    expect(cap.events).toHaveLength(1);
+    const env = cap.events[0];
+    expect(env?.durationMs).toBeUndefined();
+    expect(env && 'durationMs' in env).toBe(false);
+  });
+
   it('skips building + publishing when opts.sample returns false', () => {
     const cap = capture(channelName('billing', 'invoice-paid'));
     stop = cap.stop;

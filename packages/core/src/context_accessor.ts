@@ -12,6 +12,7 @@
  * stays exact and a future use of any of them is type-safe.
  */
 
+import { capability } from './capability.js';
 import { globalSlot } from './global-slot.js';
 
 export interface UserRef {
@@ -39,7 +40,7 @@ export interface ContextAccessor {
  * can `@Inject(CONTEXT_ACCESSOR) @Optional()` it — symmetric with how the rest
  * of the `@agora/*` family wires the optional context peer.
  */
-export const CONTEXT_ACCESSOR = Symbol.for('@agora/context:accessor');
+export const CONTEXT_ACCESSOR = capability('context', 'accessor');
 
 /**
  * The accessor used by {@link emit} to auto-fill `traceId`. `null` until something
@@ -58,7 +59,7 @@ interface AccessorHolder {
   current: ContextAccessor | null;
 }
 
-const ACCESSOR_KEY = Symbol.for('@agora/diagnostics:accessor');
+const ACCESSOR_KEY = capability('diagnostics', 'accessor');
 const accessorHolder = globalSlot<AccessorHolder>(ACCESSOR_KEY, () => ({ current: null }));
 
 /** Register (or clear, with `null`) the accessor {@link emit} reads `traceId` from. */

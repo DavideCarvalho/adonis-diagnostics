@@ -1,4 +1,5 @@
 import diagnostics_channel from 'node:diagnostics_channel';
+import { capability } from './capability.js';
 import { CHANNEL_PREFIX, channelName } from './channel.js';
 import { globalSlot } from './global-slot.js';
 import { onChannelRegistered, registeredChannels } from './registry.js';
@@ -27,7 +28,7 @@ interface ActiveSub {
  * slot on `globalThis` — same cross-copy-stable technique as the channel registry
  * — so subscriptions made through any physical copy of the package are disposed.
  */
-const DISPOSERS_KEY = Symbol.for('@agora/diagnostics:subscribers');
+const DISPOSERS_KEY = capability('diagnostics', 'subscribers');
 const disposers = globalSlot<Set<() => void>>(DISPOSERS_KEY, () => new Set<() => void>());
 
 function invokeSafely(

@@ -37,6 +37,7 @@ interface DiagnosticEvent<TPayload = unknown> {
   event: string;     // the <event>, e.g. "invoice-paid"
   traceId?: string;  // auto-filled from @agora/context when present
   payload: TPayload; // your library-defined data
+  durationMs?: number; // wall-clock duration of the operation, when known
 }
 ```
 

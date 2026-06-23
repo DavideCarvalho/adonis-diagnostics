@@ -123,7 +123,7 @@ Under the hood, `traceId` is read through a structural `ContextAccessor` interfa
 
 | Export | Description |
 | --- | --- |
-| `emit(lib, event, payload, opts?)` | Publish a `DiagnosticEvent` on `agora:<lib>:<event>` (only when subscribed). `opts`: `traceId`, `sample`. |
+| `emit(lib, event, payload, opts?)` | Publish a `DiagnosticEvent` on `agora:<lib>:<event>` (only when subscribed). `opts`: `traceId`, `sample`, `durationMs`. |
 | `trace(lib, event, fn, payload?, opts?)` | Run `fn` and publish span start/end/error phases with timing. Returns `fn`'s value. |
 | `tracingChannel(lib, event)` | A `trace` bound to one `(lib, event)` pair. |
 | `onDiagnostic(lib, event?, handler, opts?)` | Subscribe to one channel or every `agora:<lib>:*` channel. See [Consumers](/docs/diagnostics/consumers). |

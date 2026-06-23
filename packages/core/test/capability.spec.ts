@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { assertCapabilityNaming, capability } from '../src/index.js';
+import { CONTEXT_ACCESSOR, EMIT_SLOT, assertCapabilityNaming, capability } from '../src/index.js';
+import { TRACEPARENT_SLOT } from '../src/otel/traceparent.js';
 
 describe('capability', () => {
   it('mints the canonical @agora/<lib>:<name> Symbol.for token', () => {
@@ -32,5 +33,22 @@ describe('assertCapabilityNaming', () => {
     expect(() =>
       assertCapabilityNaming('diagnostics', { ACCESSOR: capability('context', 'accessor') }),
     ).toThrowError(/@agora\/diagnostics:/);
+  });
+
+  // Contract: the REAL exported global-slot keys must be minted by capability() and keep their
+  // exact, byte-stable wire strings — cross-process global slots resolve them by `Symbol.for`.
+  it('every exported slot key is minted by capability() (no hand-rolled drift)', () => {
+    expect(() => assertCapabilityNaming('diagnostics', { EMIT_SLOT })).not.toThrow();
+    expect(() => assertCapabilityNaming('context', { CONTEXT_ACCESSOR })).not.toThrow();
+    expect(() => assertCapabilityNaming('otel', { TRACEPARENT_SLOT })).not.toThrow();
+  });
+
+  it('exported slot keys are byte-identical to their canonical Symbol.for strings', () => {
+    expect(EMIT_SLOT).toBe(Symbol.for('@agora/diagnostics:emit'));
+    expect(EMIT_SLOT).toBe(capability('diagnostics', 'emit'));
+    expect(CONTEXT_ACCESSOR).toBe(Symbol.for('@agora/context:accessor'));
+    expect(CONTEXT_ACCESSOR).toBe(capability('context', 'accessor'));
+    expect(TRACEPARENT_SLOT).toBe(Symbol.for('@agora/otel:traceparent'));
+    expect(TRACEPARENT_SLOT).toBe(capability('otel', 'traceparent'));
   });
 });
