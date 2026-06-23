@@ -1,5 +1,5 @@
 ---
-"@agora/diagnostics": patch
+"@adonis-agora/diagnostics": patch
 ---
 
 Two faithful-port fixes against the NestJS source of truth:

@@ -14,17 +14,17 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 <Tab value="node ace add">
 
 ```sh title="terminal"
-node ace add @agora/diagnostics
+node ace add @adonis-agora/diagnostics
 ```
 
-This installs the package and runs `node ace configure @agora/diagnostics` for you.
+This installs the package and runs `node ace configure @adonis-agora/diagnostics` for you.
 
 </Tab>
 <Tab value="manual">
 
 ```sh title="terminal"
-npm i @agora/diagnostics
-node ace configure @agora/diagnostics
+npm i @adonis-agora/diagnostics
+node ace configure @adonis-agora/diagnostics
 ```
 
 </Tab>
@@ -32,7 +32,7 @@ node ace configure @agora/diagnostics
 
 The `configure` step does three things (see `configure.ts`):
 
-1. registers the service provider `@agora/diagnostics/diagnostics_provider` in `adonisrc.ts`;
+1. registers the service provider `@adonis-agora/diagnostics/diagnostics_provider` in `adonisrc.ts`;
 2. publishes `config/diagnostics.ts` (the `otel` flag and cross-process [transports](/docs/diagnostics/transports));
 3. publishes `start/diagnostics.ts` and registers it as a **preload file**, so your handlers are subscribed before the app serves traffic.
 
@@ -45,7 +45,7 @@ The `emit` / `trace` / `onDiagnostic` surface is just process-global functions o
 Call `emit(lib, event, payload)` wherever something interesting happens:
 
 ```ts
-import { emit } from '@agora/diagnostics'
+import { emit } from '@adonis-agora/diagnostics'
 
 emit('billing', 'invoice-paid', { invoiceId: 'inv_123', amount: 4200 })
 ```
@@ -74,7 +74,7 @@ emit('authz', 'decision', payload, { sample: () => Math.random() < 0.1 })
 When you want timing and start/end/error pairing — not just a "happened" fact — wrap the operation in `trace`:
 
 ```ts
-import { trace } from '@agora/diagnostics'
+import { trace } from '@adonis-agora/diagnostics'
 
 const decision = trace('authz', 'decision', () => evaluate(req), { subject })
 
@@ -100,7 +100,7 @@ When **no** span sub-channel has a subscriber, `trace` simply calls `fn` and ret
 For a hot site that always traces the same operation, bind it once with `tracingChannel`:
 
 ```ts
-import { tracingChannel } from '@agora/diagnostics'
+import { tracingChannel } from '@adonis-agora/diagnostics'
 
 const decision = tracingChannel('authz', 'decision')
 decision.trace(() => evaluate(req), { subject })
@@ -108,7 +108,7 @@ decision.trace(() => evaluate(req), { subject })
 
 ## Trace correlation
 
-If your app uses [`@agora/context`](/docs/context), every `emit` and `trace` auto-fills `traceId` from the active request — with **zero config here**. `@agora/context`'s provider soft-detects this package at boot and registers its accessor via `setContextAccessor`, so correlation just works once both are installed.
+If your app uses [`@adonis-agora/context`](/docs/context), every `emit` and `trace` auto-fills `traceId` from the active request — with **zero config here**. `@adonis-agora/context`'s provider soft-detects this package at boot and registers its accessor via `setContextAccessor`, so correlation just works once both are installed.
 
 Need an explicit id instead? Pass it in `opts` (it wins over the accessor):
 
@@ -117,7 +117,7 @@ emit('billing', 'invoice-paid', payload, { traceId: ctx.request.id() })
 trace('durable', 'step', () => runStep(), { name }, { traceId })
 ```
 
-Under the hood, `traceId` is read through a structural `ContextAccessor` interface registered on a cross-copy-stable `Symbol.for('@agora/context:accessor')` slot — exported here as `CONTEXT_ACCESSOR`. `@agora/context` is an optional peer; it is never imported by this package.
+Under the hood, `traceId` is read through a structural `ContextAccessor` interface registered on a cross-copy-stable `Symbol.for('@agora/context:accessor')` slot — exported here as `CONTEXT_ACCESSOR`. `@adonis-agora/context` is an optional peer; it is never imported by this package.
 
 ## API surface
 
@@ -145,10 +145,10 @@ Under the hood, `traceId` is read through a structural `ContextAccessor` interfa
 
 ## The capability protocol
 
-The `@agora/*` family wires optional peers through `Symbol.for('@agora/<lib>:<name>')` slots on `globalThis`, so a producer and consumer in different repos meet without importing each other (and no-op gracefully when a peer is absent). `capability(lib, name)` is the canonical factory for those tokens:
+The `@adonis-agora/*` family wires optional peers through `Symbol.for('@agora/<lib>:<name>')` slots on `globalThis`, so a producer and consumer in different repos meet without importing each other (and no-op gracefully when a peer is absent). `capability(lib, name)` is the canonical factory for those tokens:
 
 ```ts
-import { capability, assertCapabilityNaming } from '@agora/diagnostics'
+import { capability, assertCapabilityNaming } from '@adonis-agora/diagnostics'
 
 const ACCESSOR = capability('context', 'accessor') // Symbol.for('@agora/context:accessor')
 

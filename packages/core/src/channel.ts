@@ -127,11 +127,11 @@ export function emit<TLib extends LibOf, TEvent extends EventOf<TLib>>(
 
 /**
  * Cross-copy-stable global slot the ecosystem reads `emit` from. Other Agora libs
- * (e.g. `@agora/resilience`) republish their events through
+ * (e.g. `@adonis-agora/resilience`) republish their events through
  * `globalThis[Symbol.for('@agora/diagnostics:emit')]` STRUCTURALLY, so they never
- * import `@agora/diagnostics` and no-op when it is absent. Published at module
+ * import `@adonis-agora/diagnostics` and no-op when it is absent. Published at module
  * load — merely importing this package (which the provider does) wires it. Same
- * decoupling contract as `@agora/context`'s accessor slot.
+ * decoupling contract as `@adonis-agora/context`'s accessor slot.
  */
 export const EMIT_SLOT = capability('diagnostics', 'emit');
 (globalThis as Record<symbol, unknown>)[EMIT_SLOT] = emit;

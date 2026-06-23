@@ -3,7 +3,7 @@ import type { DiagnosticsConfig } from '../src/define_config.js';
 import { unsubscribeAll } from '../src/subscriber.js';
 
 /**
- * Wires `@agora/diagnostics` into the AdonisJS application.
+ * Wires `@adonis-agora/diagnostics` into the AdonisJS application.
  *
  * The emit/trace/onDiagnostic surface is just process-global functions over
  * `node:diagnostics_channel`, so there is little to register at boot. The
@@ -14,17 +14,17 @@ import { unsubscribeAll } from '../src/subscriber.js';
  * 2. **OpenTelemetry auto-bridge** — when `@opentelemetry/api` is resolvable (an
  *    OTel SDK such as `@adonisjs/otel` is installed), dynamically load the OTel
  *    bridge and start it, so every `trace()` span becomes a real OTel span and
- *    the W3C `traceparent` is published on the global slot for `@agora/durable`.
+ *    the W3C `traceparent` is published on the global slot for `@adonis-agora/durable`.
  *    The import is dynamic so the bridge module (and its `@opentelemetry/api`
  *    import) is never loaded when OTel is absent — the `emit`/`trace` hot path
  *    stays OTel-free. Opt out with `otel: false` in `config/diagnostics.ts`.
  *
- * The trace-id auto-fill is wired from the other side: `@agora/context`'s provider
+ * The trace-id auto-fill is wired from the other side: `@adonis-agora/context`'s provider
  * soft-detects this package at boot and registers its accessor via
  * `setContextAccessor`, so `emit()` correlates by `traceId` with zero config here.
  *
  * Register diagnostics handlers in `start/diagnostics.ts` (published by
- * `node ace configure @agora/diagnostics`).
+ * `node ace configure @adonis-agora/diagnostics`).
  */
 export default class DiagnosticsProvider {
   #stopOtel: (() => void) | null = null;
@@ -62,7 +62,7 @@ export default class DiagnosticsProvider {
     const provider = config.transports?.[name];
     if (!provider) {
       throw new Error(
-        `@agora/diagnostics: config.default is "${name}", but config.transports.${name} is not defined`,
+        `@adonis-agora/diagnostics: config.default is "${name}", but config.transports.${name} is not defined`,
       );
     }
 

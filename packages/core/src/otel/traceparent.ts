@@ -3,10 +3,10 @@ import { capability } from '../capability.js';
 
 /**
  * The cross-copy-stable global slot the ecosystem reads {@link otelTraceparent}
- * from. Other Agora libs (e.g. `@agora/durable`) read
+ * from. Other Agora libs (e.g. `@adonis-agora/durable`) read
  * `globalThis[Symbol.for('@agora/otel:traceparent')]` STRUCTURALLY to continue
  * traces on remote steps, so they never import this package and no-op when it is
- * absent. Same decoupling contract as `@agora/diagnostics`'s `EMIT_SLOT`.
+ * absent. Same decoupling contract as `@adonis-agora/diagnostics`'s `EMIT_SLOT`.
  */
 export const TRACEPARENT_SLOT = capability('otel', 'traceparent');
 
@@ -38,7 +38,7 @@ export function otelTraceparent(ctx: Context = context.active()): string | undef
 
 /**
  * Publish {@link otelTraceparent} on the cross-copy-stable global slot so
- * `@agora/durable` (and any other consumer) can continue traces with zero
+ * `@adonis-agora/durable` (and any other consumer) can continue traces with zero
  * config. Idempotent.
  */
 export function publishTraceparentSlot(): void {

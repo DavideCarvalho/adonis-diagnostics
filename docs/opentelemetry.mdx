@@ -9,12 +9,12 @@ import { Callout } from 'fumadocs-ui/components/callout';
 The core package ships an **OpenTelemetry bridge** that reconstructs real OTel spans from `trace()` activity and records POINT `emit`s as events on the active span. When an OTel SDK is installed it turns on **automatically** — no extra wiring — and when it isn't, it's a no-op you can safely leave on.
 
 <Callout type="info" title="Optional peer">
-`@opentelemetry/api` is an **optional** peer dependency of `@agora/diagnostics`. The bridge module (and its OTel import) is loaded *dynamically* by the provider only when OTel is resolvable, so the `emit`/`trace` hot path stays OTel-free by default.
+`@opentelemetry/api` is an **optional** peer dependency of `@adonis-agora/diagnostics`. The bridge module (and its OTel import) is loaded *dynamically* by the provider only when OTel is resolvable, so the `emit`/`trace` hot path stays OTel-free by default.
 </Callout>
 
 ## Auto-start
 
-The diagnostics provider's `boot()` tries to load `@agora/diagnostics/otel` and start it. If `@opentelemetry/api` can't be resolved (no OTel SDK installed), the import fails and the bridge is skipped silently. If it resolves, the bridge starts and is torn down on `shutdown()`.
+The diagnostics provider's `boot()` tries to load `@adonis-agora/diagnostics/otel` and start it. If `@opentelemetry/api` can't be resolved (no OTel SDK installed), the import fails and the bridge is skipped silently. If it resolves, the bridge starts and is torn down on `shutdown()`.
 
 So if you have an OTel SDK in your app (e.g. `@adonisjs/otel` or a manual `NodeSDK` setup), every `trace()` span already becomes an OTel span. Nothing else to do.
 
@@ -50,7 +50,7 @@ If you start the bridge manually (see below), `start(opts)` / `new DiagnosticsOt
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `tracerName` | `string` | `@agora/diagnostics` | Name passed to `trace.getTracer(...)`. |
+| `tracerName` | `string` | `@adonis-agora/diagnostics` | Name passed to `trace.getTracer(...)`. |
 | `recordPointEvents` | `boolean` | `true` | Record POINT `emit`s as events on the active span. |
 | `maxOpenSpans` | `number` | `10000` | Cap on open (un-ended) spans; the oldest is force-ended when exceeded. |
 
@@ -58,10 +58,10 @@ The open-span cap is a safety valve: if a `trace()` span never observes an `end`
 
 ## Manual control
 
-You rarely need this — the provider handles it — but the bridge is exported from the `@agora/diagnostics/otel` subpath:
+You rarely need this — the provider handles it — but the bridge is exported from the `@adonis-agora/diagnostics/otel` subpath:
 
 ```ts
-import { start, stop, DiagnosticsOtelBridge } from '@agora/diagnostics/otel'
+import { start, stop, DiagnosticsOtelBridge } from '@adonis-agora/diagnostics/otel'
 
 // Idempotent module-level singleton:
 start({ tracerName: 'my-app', recordPointEvents: true })
@@ -82,14 +82,14 @@ bridge.stop()
 When the bridge starts it also publishes the current active span as a W3C `traceparent` string on a cross-copy-stable global slot, `Symbol.for('@agora/otel:traceparent')`. This lets a durable/remote engine continue the trace on a worker with **zero config** — it reads the slot structurally and no-ops when the slot is absent:
 
 ```ts
-import { otelTraceparent } from '@agora/diagnostics/otel'
+import { otelTraceparent } from '@adonis-agora/diagnostics/otel'
 
 // Wire it into a durable engine so remote steps continue the trace:
 engine.configure({ traceparent: () => otelTraceparent() })
 ```
 
-`otelTraceparent()` uses the globally-registered OTel propagator (`propagation.inject`), so a standard W3C setup needs no extra config; with no SDK registered it returns `undefined` and never throws. `@agora/diagnostics/otel` also exports `publishTraceparentSlot()` / `clearTraceparentSlot()` and the `TRACEPARENT_SLOT` symbol for manual control.
+`otelTraceparent()` uses the globally-registered OTel propagator (`propagation.inject`), so a standard W3C setup needs no extra config; with no SDK registered it returns `undefined` and never throws. `@adonis-agora/diagnostics/otel` also exports `publishTraceparentSlot()` / `clearTraceparentSlot()` and the `TRACEPARENT_SLOT` symbol for manual control.
 
 ## Relationship to trace correlation
 
-The bridge produces OTel **spans**; the `traceId` on each envelope (auto-filled from [`@agora/context`](/docs/context)) is a separate, ecosystem-level correlation id surfaced as the `agora.trace_id` attribute. The two are complementary: OTel gives you the trace tree, `traceId` ties an event back to the originating request even on a path with no active OTel span (e.g. a background worker).
+The bridge produces OTel **spans**; the `traceId` on each envelope (auto-filled from [`@adonis-agora/context`](/docs/context)) is a separate, ecosystem-level correlation id surfaced as the `agora.trace_id` attribute. The two are complementary: OTel gives you the trace tree, `traceId` ties an event back to the originating request even on a path with no active OTel span (e.g. a background worker).

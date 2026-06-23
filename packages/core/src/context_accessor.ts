@@ -1,13 +1,13 @@
 /**
- * Local, structural mirror of `@agora/context`'s public accessor
+ * Local, structural mirror of `@adonis-agora/context`'s public accessor
  * (`packages/core/src/accessor.ts`).
  *
- * We deliberately do NOT import @agora/context (it is an OPTIONAL peer). Instead
+ * We deliberately do NOT import @adonis-agora/context (it is an OPTIONAL peer). Instead
  * we declare the same shape here; any object that structurally satisfies this
- * interface — including @agora/context's real accessor — can be registered via
+ * interface — including @adonis-agora/context's real accessor — can be registered via
  * {@link setContextAccessor} so {@link emit} can auto-fill `traceId`.
  *
- * Kept byte-aligned with @agora/context's `ContextAccessor`: `traceId()` /
+ * Kept byte-aligned with @adonis-agora/context's `ContextAccessor`: `traceId()` /
  * `tenantId()` / `userRef()` / `get()` are all present so the structural match
  * stays exact and a future use of any of them is type-safe.
  */
@@ -35,16 +35,16 @@ export interface ContextAccessor {
 }
 
 /**
- * The shared token @agora/context publishes its accessor under. Exposed so a
+ * The shared token @adonis-agora/context publishes its accessor under. Exposed so a
  * Nest app can `{ provide: CONTEXT_ACCESSOR, useExisting: ... }` and a consumer
  * can `@Inject(CONTEXT_ACCESSOR) @Optional()` it — symmetric with how the rest
- * of the `@agora/*` family wires the optional context peer.
+ * of the `@adonis-agora/*` family wires the optional context peer.
  */
 export const CONTEXT_ACCESSOR = capability('context', 'accessor');
 
 /**
  * The accessor used by {@link emit} to auto-fill `traceId`. `null` until something
- * calls {@link setContextAccessor} — `@agora/context` does this at module
+ * calls {@link setContextAccessor} — `@adonis-agora/context` does this at module
  * init (soft-detecting this package), so `traceId` correlates automatically when
  * context is installed. Kept out of the hot path: when unset, `emit` leaves
  * `traceId` undefined.

@@ -1,7 +1,7 @@
 /**
  * Read — or lazily initialize — a process-wide value held under a `Symbol.for` key on `globalThis`.
  *
- * The `@agora/*` family publishes a few registries/holders this way so that even when more than one
+ * The `@adonis-agora/*` family publishes a few registries/holders this way so that even when more than one
  * physical copy of a package is loaded (divergent version ranges pnpm can't dedupe into one
  * instance, or the dual ESM/CJS build evaluated once via `import` and once via `require`), every
  * copy resolves the SAME object — the registered symbol collapses all copies to one identity.

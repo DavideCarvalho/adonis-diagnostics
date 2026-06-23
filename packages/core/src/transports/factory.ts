@@ -54,7 +54,7 @@ function selection(forward: ChannelSelection) {
  * The transport factory namespace used in `config/diagnostics.ts`:
  *
  * ```ts
- * import { defineConfig, transports } from '@agora/diagnostics'
+ * import { defineConfig, transports } from '@adonis-agora/diagnostics'
  *
  * export default defineConfig({
  *   default: 'redis',

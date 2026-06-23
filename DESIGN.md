@@ -1,4 +1,4 @@
-# `@agora/diagnostics` — DESIGN
+# `@adonis-agora/diagnostics` — DESIGN
 
 > Port of `@dudousxd/nestjs-diagnostics` (aviary) to AdonisJS (Agora).
 
@@ -48,11 +48,11 @@ Handlers são registrados em `start/diagnostics.ts` (preload publicado pelo
 
 - **Provider** (`diagnostics_provider.ts`): só lifecycle — `shutdown()` →
   `unsubscribeAll()`. O auto-fill de `traceId` vem do outro lado: o provider do
-  `@agora/context` soft-detecta este pacote no boot e chama `setContextAccessor`.
-- **`node ace configure @agora/diagnostics`**: registra o provider, publica
+  `@adonis-agora/context` soft-detecta este pacote no boot e chama `setContextAccessor`.
+- **`node ace configure @adonis-agora/diagnostics`**: registra o provider, publica
   `start/diagnostics.ts` e o adiciona como preload.
 
-## 5. Cross-process (`@agora/diagnostics-redis`)
+## 5. Cross-process (`@adonis-agora/diagnostics-redis`)
 
 `relay.ts` é agnóstico (interface `RedisLike` estrutural — ioredis satisfaz).
 Encaminha canais locais selecionados pro Redis pub/sub e re-emite os recebidos no
@@ -77,7 +77,7 @@ ponte vive **no próprio core**, ligada pelo provider:
   OTel reais** a partir dos eventos do `trace()` (start→end/error, sync e async),
   com atributos do payload. POINT `emit`s viram `addEvent` no span ativo.
 - Publica `otelTraceparent()` no slot global `Symbol.for('@agora/otel:traceparent')`
-  — o `@agora/durable` lê esse slot e continua o trace distribuído nos remote steps,
+  — o `@adonis-agora/durable` lê esse slot e continua o trace distribuído nos remote steps,
   sem config, sem dependência hard.
 - **Limitação honesta (observador post-hoc):** a ponte não controla o contexto de
   execução, então aninha o span agora sob o **span OTel ativo do ambiente** (ex: o
@@ -87,12 +87,12 @@ ponte vive **no próprio core**, ligada pelo provider:
 
 ## 6. Pacotes
 
-- `@agora/diagnostics` — núcleo (emit/trace/onDiagnostic + registry + context bridge
-  + **auto-bridge OTel** opcional via `@opentelemetry/api`; subpath `@agora/diagnostics/otel`)
-- `@agora/diagnostics-redis` — relay cross-process sobre `@adonisjs/redis`
-- `@agora/diagnostics-queue` — relay cross-process (fan-out) sobre `@adonisjs/queue`
+- `@adonis-agora/diagnostics` — núcleo (emit/trace/onDiagnostic + registry + context bridge
+  + **auto-bridge OTel** opcional via `@opentelemetry/api`; subpath `@adonis-agora/diagnostics/otel`)
+- `@adonis-agora/diagnostics-redis` — relay cross-process sobre `@adonisjs/redis`
+- `@adonis-agora/diagnostics-queue` — relay cross-process (fan-out) sobre `@adonisjs/queue`
 
 ## 7. Não-objetivos
 
-- Não é um storage/dashboard (isso é o `@agora/telescope`).
+- Não é um storage/dashboard (isso é o `@adonis-agora/telescope`).
 - Não impõe schema de payload (opaco; `ChannelRegistry` é opt-in só pra tipos).

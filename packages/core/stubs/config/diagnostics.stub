@@ -1,7 +1,7 @@
 {{{
   exports({ to: app.configPath('diagnostics.ts') })
 }}}
-import { defineConfig } from '@agora/diagnostics'
+import { defineConfig } from '@adonis-agora/diagnostics'
 
 export default defineConfig({
   /*
@@ -14,7 +14,7 @@ export default defineConfig({
    * Diagnostics is local-only by default. To fan events out across processes,
    * install a driver's peer deps and switch the import to:
    *
-   *   import { defineConfig, transports } from '@agora/diagnostics'
+   *   import { defineConfig, transports } from '@adonis-agora/diagnostics'
    *
    * then pick a default transport and list the ones you use:
    *

@@ -1,9 +1,9 @@
 /**
  * The capability protocol — the typed, cross-repo contract for the optional peer capabilities the
- * `@agora/*` family publishes on `globalThis`.
+ * `@adonis-agora/*` family publishes on `globalThis`.
  *
- * Every Agora lib that exposes a capability for siblings to consume — `@agora/context`'s accessor,
- * `@agora/diagnostics`'s `emit`, the OTel traceparent, etc. — does so under a `Symbol.for` key. This
+ * Every Agora lib that exposes a capability for siblings to consume — `@adonis-agora/context`'s accessor,
+ * `@adonis-agora/diagnostics`'s `emit`, the OTel traceparent, etc. — does so under a `Symbol.for` key. This
  * module is the single source of that key's naming and its type, mirroring the event-transport side:
  * `capability(lib, name)` is to the capability registry what {@link channelName} is to the channel
  * registry, and {@link CapabilityRegistry} is the typed mirror of `ChannelRegistry`.
@@ -33,7 +33,7 @@ export function capability(lib: string, name: string): symbol {
  * available for capabilities no one has declared.
  *
  * ```ts
- * declare module '@agora/diagnostics' {
+ * declare module '@adonis-agora/diagnostics' {
  *   interface CapabilityRegistry {
  *     context: { accessor: ContextAccessor };
  *   }

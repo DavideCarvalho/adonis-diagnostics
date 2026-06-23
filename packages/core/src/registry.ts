@@ -21,7 +21,7 @@ import { globalSlot } from './global-slot.js';
  * via `node:diagnostics_channel`; this makes their discovery registry equally
  * global, so a generic observer always sees every emitted channel regardless of
  * which copy registered it. Uses the same `Symbol.for` global-registry technique
- * the `@agora/*` family uses for cross-copy-stable identifiers (e.g. the
+ * the `@adonis-agora/*` family uses for cross-copy-stable identifiers (e.g. the
  * `CONTEXT_ACCESSOR` token).
  */
 interface Registry {

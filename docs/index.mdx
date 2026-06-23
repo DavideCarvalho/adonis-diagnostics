@@ -8,7 +8,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Cards, Card } from 'fumadocs-ui/components/card';
 
-**`@agora/diagnostics`** is a tiny, standard convention for `@agora/*` AdonisJS libraries to emit observability events over Node's built-in [`diagnostics_channel`](https://nodejs.org/api/diagnostics_channel.html). A library calls `emit('billing', 'invoice-paid', payload)` — or wraps an operation in `trace('authz', 'decision', fn)` — and is done. Whoever wants to observe it subscribes. It costs essentially nothing when nobody is listening, and never throws.
+**`@adonis-agora/diagnostics`** is a tiny, standard convention for `@adonis-agora/*` AdonisJS libraries to emit observability events over Node's built-in [`diagnostics_channel`](https://nodejs.org/api/diagnostics_channel.html). A library calls `emit('billing', 'invoice-paid', payload)` — or wraps an operation in `trace('authz', 'decision', fn)` — and is done. Whoever wants to observe it subscribes. It costs essentially nothing when nobody is listening, and never throws.
 
 <Callout type="info" title="Alpha">
 Published as `0.1.0`. The API on these pages matches the current source. Pin a version in production.
@@ -35,7 +35,7 @@ interface DiagnosticEvent<TPayload = unknown> {
   ts: number;        // Date.now() at publish time
   lib: string;       // the <lib>, e.g. "billing"
   event: string;     // the <event>, e.g. "invoice-paid"
-  traceId?: string;  // auto-filled from @agora/context when present
+  traceId?: string;  // auto-filled from @adonis-agora/context when present
   payload: TPayload; // your library-defined data
   durationMs?: number; // wall-clock duration of the operation, when known
 }
@@ -53,7 +53,7 @@ It's a Node built-in, so the bus has **zero runtime dependencies**. Channels are
 Install and configure:
 
 ```sh title="terminal"
-node ace add @agora/diagnostics
+node ace add @adonis-agora/diagnostics
 ```
 
 </Step>
@@ -62,7 +62,7 @@ node ace add @agora/diagnostics
 Emit an event from anywhere — it's published only when something is subscribed:
 
 ```ts
-import { emit } from '@agora/diagnostics'
+import { emit } from '@adonis-agora/diagnostics'
 
 emit('billing', 'invoice-paid', { invoiceId: 'inv_123', amount: 4200 })
 ```
@@ -77,7 +77,7 @@ Observe it from any consumer — the simplest being `onDiagnostic`, registered i
 
 ## Explore
 
-One package, `@agora/diagnostics`. Cross-process fan-out is a config choice, not an extra package — see [Transports](/docs/diagnostics/transports).
+One package, `@adonis-agora/diagnostics`. Cross-process fan-out is a config choice, not an extra package — see [Transports](/docs/diagnostics/transports).
 
 <Cards>
   <Card title="Getting started" href="/docs/diagnostics/getting-started" description="The core bus — emit(), trace(), onDiagnostic(), the capability protocol, and the OTel auto-bridge." />
@@ -89,7 +89,7 @@ One package, `@agora/diagnostics`. Cross-process fan-out is a config choice, not
 ## Where to go next
 
 <Cards>
-  <Card title="Getting Started" href="/docs/diagnostics/getting-started" description="Install, configure, emit POINT events and trace() spans, and auto-fill traceId from @agora/context." />
+  <Card title="Getting Started" href="/docs/diagnostics/getting-started" description="Install, configure, emit POINT events and trace() spans, and auto-fill traceId from @adonis-agora/context." />
   <Card title="Consumers" href="/docs/diagnostics/consumers" description="Observe events with onDiagnostic, write your own subscriber, and assert on emits in tests." />
   <Card title="OpenTelemetry" href="/docs/diagnostics/opentelemetry" description="The zero-config bridge that turns trace() spans into real OTel spans and publishes the W3C traceparent." />
 </Cards>

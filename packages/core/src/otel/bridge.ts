@@ -16,7 +16,7 @@ import { clearTraceparentSlot, publishTraceparentSlot } from './traceparent.js';
 
 /** Resolved options for the bridge — every field defaulted by {@link start}. */
 export interface BridgeOptions {
-  /** Tracer name for `trace.getTracer(...)`. Default `@agora/diagnostics`. */
+  /** Tracer name for `trace.getTracer(...)`. Default `@adonis-agora/diagnostics`. */
   tracerName?: string;
   /** Record POINT `emit`s as events on the active span. Default `true`. */
   recordPointEvents?: boolean;
@@ -24,7 +24,7 @@ export interface BridgeOptions {
   maxOpenSpans?: number;
 }
 
-const DEFAULT_TRACER_NAME = '@agora/diagnostics';
+const DEFAULT_TRACER_NAME = '@adonis-agora/diagnostics';
 const DEFAULT_MAX_OPEN_SPANS = 10_000;
 
 /** A live subscription so {@link stop} can tear it down. */

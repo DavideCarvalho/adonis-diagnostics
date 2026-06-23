@@ -3,9 +3,9 @@
 }}}
 /*
  * Register diagnostics handlers here. This file is preloaded at boot, so handlers
- * are subscribed before the app serves traffic. See @agora/diagnostics.
+ * are subscribed before the app serves traffic. See @adonis-agora/diagnostics.
  */
-import { onDiagnostic } from '@agora/diagnostics'
+import { onDiagnostic } from '@adonis-agora/diagnostics'
 
 // Example — record every resilience event:
 // onDiagnostic('resilience', (event) => {

@@ -1,5 +1,5 @@
 /**
- * The envelope every `@agora/*` library publishes over
+ * The envelope every `@adonis-agora/*` library publishes over
  * `node:diagnostics_channel`. It is the cross-repo wire contract: the generic
  * Telescope watcher (and any other observer) reads exactly these fields, so keep
  * the shape stable. The `payload` is opaque — its meaning is owned by the
@@ -44,7 +44,7 @@ export interface DiagnosticEvent<TPayload = unknown> {
  * augmenting this interface via TypeScript declaration merging:
  *
  * ```ts
- * declare module '@agora/diagnostics' {
+ * declare module '@adonis-agora/diagnostics' {
  *   interface ChannelRegistry {
  *     billing: {
  *       'invoice-paid': { invoiceId: string; amount: number };

@@ -1,4 +1,4 @@
-# `@agora/diagnostics`
+# `@adonis-agora/diagnostics`
 
 > A standard convention for **Agora** AdonisJS libs to emit observability events
 > over [`node:diagnostics_channel`](https://nodejs.org/api/diagnostics_channel.html)
@@ -12,8 +12,8 @@ between them, only the channel-name wire contract.
 ## Install
 
 ```sh
-npm i @agora/diagnostics
-node ace configure @agora/diagnostics
+npm i @adonis-agora/diagnostics
+node ace configure @adonis-agora/diagnostics
 ```
 
 `configure` registers the provider and publishes `start/diagnostics.ts` (preloaded)
@@ -22,7 +22,7 @@ where you register handlers.
 ## Emit
 
 ```ts
-import { emit, trace } from '@agora/diagnostics'
+import { emit, trace } from '@adonis-agora/diagnostics'
 
 // POINT event — free when nothing is subscribed:
 emit('billing', 'invoice-paid', { invoiceId: 'inv_123', amount: 4200 })
@@ -31,14 +31,14 @@ emit('billing', 'invoice-paid', { invoiceId: 'inv_123', amount: 4200 })
 const decision = trace('authz', 'decision', () => evaluate(req), { subject })
 ```
 
-`traceId` auto-fills from `@agora/context` when installed (the context provider
+`traceId` auto-fills from `@adonis-agora/context` when installed (the context provider
 soft-registers its accessor). Declare typed payloads via the `ChannelRegistry`
 augmentation for compile-time checks.
 
 ## Observe
 
 ```ts
-import { onDiagnostic } from '@agora/diagnostics'
+import { onDiagnostic } from '@adonis-agora/diagnostics'
 
 onDiagnostic('resilience', (event) => log(event))        // every resilience event
 onDiagnostic('authz', 'decision', (event) => audit(event)) // one exact channel
@@ -48,13 +48,13 @@ onDiagnostic('authz', 'decision', (event) => audit(event)) // one exact channel
 
 | Package | What |
 |---|---|
-| [`@agora/diagnostics`](./packages/core) | emit / trace / onDiagnostic over `node:diagnostics_channel`, plus the OpenTelemetry bridge and the cross-process Redis / `@adonisjs/queue` transports (selected in `config/diagnostics.ts`) |
+| [`@adonis-agora/diagnostics`](./packages/core) | emit / trace / onDiagnostic over `node:diagnostics_channel`, plus the OpenTelemetry bridge and the cross-process Redis / `@adonisjs/queue` transports (selected in `config/diagnostics.ts`) |
 
 ## The Agora ecosystem
 
 AdonisJS port of the [aviary](https://github.com/DavideCarvalho) NestJS ecosystem.
-Built on [`@agora/context`](https://github.com/DavideCarvalho/adonis-context) for
-trace correlation; recorded by `@agora/telescope`.
+Built on [`@adonis-agora/context`](https://github.com/DavideCarvalho/adonis-context) for
+trace correlation; recorded by `@adonis-agora/telescope`.
 
 ## License
 

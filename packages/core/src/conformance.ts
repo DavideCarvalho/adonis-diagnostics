@@ -5,7 +5,7 @@
  * error that NAMES the offending export, turning naming drift into a red test.
  *
  * ```ts
- * import { capability, assertCapabilityNaming } from '@agora/diagnostics';
+ * import { capability, assertCapabilityNaming } from '@adonis-agora/diagnostics';
  *
  * it('exports canonically-named capability tokens', () => {
  *   assertCapabilityNaming('context', { ACCESSOR: capability('context', 'accessor') });

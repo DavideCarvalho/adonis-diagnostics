@@ -13,7 +13,7 @@ A diagnostic event is just a message on a Node channel. **Anything can read it.*
 `onDiagnostic` is the framework-agnostic heart of the convention: subscribe a handler to one channel, or to every channel of a lib (current *and* future). It returns an unsubscribe function, and a handler that throws or rejects never propagates back to the emitter.
 
 ```ts title="start/diagnostics.ts"
-import { onDiagnostic } from '@agora/diagnostics'
+import { onDiagnostic } from '@adonis-agora/diagnostics'
 
 // Every agora:resilience:* channel — including ones registered later:
 onDiagnostic('resilience', (event) => {
@@ -50,8 +50,8 @@ Node's `diagnostics_channel` has **no wildcard subscription**: you can only subs
 
 ```ts
 import diagnostics_channel from 'node:diagnostics_channel'
-import { registeredChannels, onChannelRegistered } from '@agora/diagnostics'
-import type { DiagnosticEvent } from '@agora/diagnostics'
+import { registeredChannels, onChannelRegistered } from '@adonis-agora/diagnostics'
+import type { DiagnosticEvent } from '@adonis-agora/diagnostics'
 
 function observeAll(handler: (e: DiagnosticEvent) => void) {
   const subscribe = (name: string) =>
@@ -76,8 +76,8 @@ You don't need a generic observer if you only care about one event. Subscribe to
 
 ```ts
 import diagnostics_channel from 'node:diagnostics_channel'
-import { channelName } from '@agora/diagnostics'
-import type { DiagnosticEvent } from '@agora/diagnostics'
+import { channelName } from '@adonis-agora/diagnostics'
+import type { DiagnosticEvent } from '@adonis-agora/diagnostics'
 
 diagnostics_channel.subscribe(channelName('authz', 'decision'), (msg) => {
   const e = msg as DiagnosticEvent
@@ -124,8 +124,8 @@ onDiagnostic('billing', (e) => {
 Subscribing makes events assertable. Drop a collector in your test, exercise the code, and check what was emitted:
 
 ```ts
-import { onDiagnostic } from '@agora/diagnostics'
-import type { DiagnosticEvent } from '@agora/diagnostics'
+import { onDiagnostic } from '@adonis-agora/diagnostics'
+import type { DiagnosticEvent } from '@adonis-agora/diagnostics'
 
 const seen: DiagnosticEvent[] = []
 const off = onDiagnostic('authz', 'decision', (e) => seen.push(e))

@@ -10,7 +10,7 @@ import { Steps, Step } from 'fumadocs-ui/components/steps';
 
 `node:diagnostics_channel` is **process-local**: an event emitted in your web process is invisible to a worker, and vice versa. A **transport** relays selected `agora:<lib>:<event>` channels across processes so `onDiagnostic` handlers (and any `getChannel(...).subscribe(...)`) fire everywhere.
 
-Transports ship **inside `@agora/diagnostics`** and are selected in `config/diagnostics.ts` — there are no separate `@agora/diagnostics-redis` / `-queue` packages. You pick a `default` transport and list the ones you use under `transports`, exactly the way `@adonisjs/session` picks a `store` or `@adonisjs/cache` picks a store driver. The driver's peer dependency (`@adonisjs/redis`, `@adonisjs/queue`) is imported lazily, only when you actually select it.
+Transports ship **inside `@adonis-agora/diagnostics`** and are selected in `config/diagnostics.ts` — there are no separate `@adonis-agora/diagnostics-redis` / `-queue` packages. You pick a `default` transport and list the ones you use under `transports`, exactly the way `@adonisjs/session` picks a `store` or `@adonisjs/cache` picks a store driver. The driver's peer dependency (`@adonisjs/redis`, `@adonisjs/queue`) is imported lazily, only when you actually select it.
 
 ## Configuring a transport
 
@@ -20,7 +20,7 @@ Transports ship **inside `@agora/diagnostics`** and are selected in `config/diag
 Pick a `default` and declare your transports with the `transports` factory:
 
 ```ts title="config/diagnostics.ts"
-import { defineConfig, transports } from '@agora/diagnostics'
+import { defineConfig, transports } from '@adonis-agora/diagnostics'
 
 export default defineConfig({
   otel: true,
@@ -120,7 +120,7 @@ The relay only dispatches; it never waits. That fits diagnostics (you want event
 The transport factories wrap two framework-agnostic functions, exported for non-Adonis use, tests, or custom wiring. They take the raw collaborators (a Redis client pair, or a job with `dispatch`) and the same selection options:
 
 ```ts
-import { createDiagnosticsRedisRelay, createDiagnosticsQueueRelay } from '@agora/diagnostics'
+import { createDiagnosticsRedisRelay, createDiagnosticsQueueRelay } from '@adonis-agora/diagnostics'
 
 const stop = createDiagnosticsRedisRelay({ pub, sub, libs: ['resilience'], nodeId: 'A' })
 // …later
