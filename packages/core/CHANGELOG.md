@@ -1,5 +1,11 @@
 # @adonis-agora/diagnostics
 
+## 0.2.1
+
+### Patch Changes
+
+- [`88db3f2`](https://github.com/DavideCarvalho/adonis-diagnostics/commit/88db3f244b864a564ae5cc415c3701080c7d0873) - fix: sync VERSION literal via sync-version guard
+
 ## 0.2.0
 
 ### Minor Changes
